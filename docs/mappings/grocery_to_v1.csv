@@ -1,0 +1,5 @@
+source_dataset,original_fine_label,original_coarse_label,mapped_label,decision,reason
+GroceryStoreDataset,apple,fruit,apple,KEEP,direct stable match
+GroceryStoreDataset,banana,fruit,banana,KEEP,direct stable match
+GroceryStoreDataset,cucumber,vegetable,cucumber,KEEP,direct stable match
+GroceryStoreDataset,salad,prepared,DROP,DROP,raw source label needs review against final dataset naming

@@ -1,0 +1,31 @@
+class_id,class_name,class_group,status,notes
+0,apple,ingredient,active,whole apples or cut apples when still visually clear
+1,banana,ingredient,active,ripe or unripe bananas
+2,citrus,ingredient,active,orange mandarin and similar citrus grouped for stability
+3,grapes,ingredient,active,green or red grapes
+4,tomato,ingredient,active,whole tomato or large tomato pieces
+5,cucumber,ingredient,active,whole cucumber or large slices
+6,leafy_greens,ingredient,active,lettuce spinach bok choy and similar leaves
+7,carrot,ingredient,active,whole carrot or large segments
+8,onion,ingredient,active,whole or halved onion
+9,mushroom,ingredient,active,common edible mushrooms
+10,egg_raw,ingredient,active,shell eggs
+11,milk,ingredient,active,milk containers when container appearance is stable in target domain
+12,yogurt,ingredient,active,yogurt cups or bowls when visually separable
+13,cheese,ingredient,candidate,keep only if target domain images show stable appearance
+14,tofu,ingredient,candidate,requires target-domain confirmation
+15,rice_plain,prepared_food,active,plain cooked rice
+16,fried_rice,prepared_food,active,fried rice style dishes
+17,noodles,prepared_food,active,noodles and pasta when sauce style is not a key distinction
+18,congee_porridge,prepared_food,active,porridge and congee
+19,soup_stew,prepared_food,active,soup and stew in container
+20,salad,prepared_food,active,leaf or mixed cold salad
+21,sandwich_burger,prepared_food,active,sandwiches burgers and similar handheld bread items
+22,pizza,prepared_food,active,slices or boxed pizza
+23,dumpling_bun,prepared_food,active,dumplings buns and similar wrapped dough items
+24,egg_prepared,prepared_food,active,omelet scrambled egg boiled peeled egg
+25,cooked_meat,prepared_food,active,prepared meat portions
+26,cooked_seafood,prepared_food,candidate,requires enough real fridge images
+27,sausage_ham,prepared_food,active,sliced or packaged sausage and ham in target domain
+28,bread_pastry,prepared_food,candidate,keep only if not too broad in data review
+29,cake_dessert,prepared_food,candidate,keep only if target use case needs it

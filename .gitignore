@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Local training outputs
+exports/v1/*
+!exports/v1/README.md
+
+# Downloaded public datasets
+data/external_datasets/*
+!data/external_datasets/README.md
+
+# Local translated review files
+foodkeeper_zh.xml
+foodkeeper_zh.xlsx
+foodkeeper_sample_20_full_zh.xlsx
+~$*.xlsx

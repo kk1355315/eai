@@ -1,0 +1,5 @@
+source_dataset,original_label,mapped_label,decision,reason
+ChineseFoodNet,fried_rice,fried_rice,KEEP,direct stable match
+ChineseFoodNet,egg_tart,DROP,DROP,out of current fridge-value scope
+ChineseFoodNet,noodle_soup,noodles,KEEP,map to medium-granularity prepared food class
+ChineseFoodNet,braised_mixed_vegetables,DROP,DROP,visually unstable and overlaps multiple product classes
