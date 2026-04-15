@@ -1,8 +1,13 @@
-import tempfile
+import shutil
 import unittest
+import uuid
+from contextlib import contextmanager
 from pathlib import Path
 
-from openpyxl import load_workbook
+try:
+    from openpyxl import load_workbook
+except ModuleNotFoundError:  # pragma: no cover - optional dependency in local dev
+    load_workbook = None
 
 from tools.export_foodkeeper_zh import (
     build_translated_workbook,
@@ -10,6 +15,16 @@ from tools.export_foodkeeper_zh import (
     write_excel_xml,
     write_xlsx,
 )
+
+
+@contextmanager
+def workspace_tempdir() -> Path:
+    path = Path.cwd() / ".tmp_testdirs" / uuid.uuid4().hex
+    path.mkdir(parents=True, exist_ok=False)
+    try:
+        yield path
+    finally:
+        shutil.rmtree(path, ignore_errors=True)
 
 
 class ExportFoodkeeperZhTests(unittest.TestCase):
@@ -106,8 +121,8 @@ class ExportFoodkeeperZhTests(unittest.TestCase):
             ]
         }
 
-        with tempfile.TemporaryDirectory() as tmp:
-            output = Path(tmp) / "foodkeeper_zh.xml"
+        with workspace_tempdir() as tmpdir:
+            output = tmpdir / "foodkeeper_zh.xml"
 
             write_excel_xml(translated, output)
 
@@ -117,6 +132,9 @@ class ExportFoodkeeperZhTests(unittest.TestCase):
             self.assertIn("<Data ss:Type=\"String\">农产品 | Produce</Data>", xml_text)
 
     def test_write_xlsx_outputs_excel_workbook(self) -> None:
+        if load_workbook is None:
+            self.skipTest("openpyxl is not installed")
+
         translated = {
             "sheets": [
                 {
@@ -129,8 +147,8 @@ class ExportFoodkeeperZhTests(unittest.TestCase):
             ]
         }
 
-        with tempfile.TemporaryDirectory() as tmp:
-            output = Path(tmp) / "foodkeeper_zh.xlsx"
+        with workspace_tempdir() as tmpdir:
+            output = tmpdir / "foodkeeper_zh.xlsx"
 
             write_xlsx(translated, output)
 

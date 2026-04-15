@@ -1,0 +1,26 @@
+source_dataset,original_label,mapped_label,decision,reason
+FreiburgGroceriesDataset,CANDY,DROP,DROP,snack or pantry class is outside current ingredient-first V1 scope
+FreiburgGroceriesDataset,JUICE,DROP,DROP,beverage class is outside current ingredient-first V1 scope
+FreiburgGroceriesDataset,VINEGAR,DROP,DROP,pantry ingredient is outside the released V1 fridge taxonomy
+FreiburgGroceriesDataset,OIL,DROP,DROP,pantry ingredient is outside the released V1 fridge taxonomy
+FreiburgGroceriesDataset,CHOCOLATE,DROP,DROP,snack or pantry class is outside current ingredient-first V1 scope
+FreiburgGroceriesDataset,PASTA,DROP,DROP,prepared or shelf-stable food class removed from ingredient-first V1
+FreiburgGroceriesDataset,RICE,DROP,DROP,prepared or shelf-stable food class removed from ingredient-first V1
+FreiburgGroceriesDataset,MILK,milk,KEEP,packaged milk cartons are stable for the milk class
+FreiburgGroceriesDataset,SPICES,DROP,DROP,pantry ingredient is outside the released V1 fridge taxonomy
+FreiburgGroceriesDataset,HONEY,DROP,DROP,pantry ingredient is outside the released V1 fridge taxonomy
+FreiburgGroceriesDataset,JAM,DROP,DROP,pantry ingredient is outside the released V1 fridge taxonomy
+FreiburgGroceriesDataset,NUTS,DROP,DROP,snack or pantry class is outside current ingredient-first V1 scope
+FreiburgGroceriesDataset,CHIPS,DROP,DROP,snack or pantry class is outside current ingredient-first V1 scope
+FreiburgGroceriesDataset,SODA,DROP,DROP,beverage class is outside current ingredient-first V1 scope
+FreiburgGroceriesDataset,COFFEE,DROP,DROP,beverage class is outside current ingredient-first V1 scope
+FreiburgGroceriesDataset,BEANS,DROP,DROP,packaged pantry staple is outside the released V1 class list
+FreiburgGroceriesDataset,TEA,DROP,DROP,beverage class is outside current ingredient-first V1 scope
+FreiburgGroceriesDataset,CORN,DROP,DROP,packaged pantry staple is outside the released V1 class list
+FreiburgGroceriesDataset,CEREAL,DROP,DROP,snack or pantry class is outside current ingredient-first V1 scope
+FreiburgGroceriesDataset,CAKE,DROP,DROP,prepared or shelf-stable food class removed from ingredient-first V1
+FreiburgGroceriesDataset,SUGAR,DROP,DROP,pantry ingredient is outside the released V1 fridge taxonomy
+FreiburgGroceriesDataset,WATER,DROP,DROP,beverage class is outside current ingredient-first V1 scope
+FreiburgGroceriesDataset,FLOUR,DROP,DROP,pantry ingredient is outside the released V1 fridge taxonomy
+FreiburgGroceriesDataset,TOMATO_SAUCE,DROP,DROP,tomato sauce is a processed product not the tomato ingredient class
+FreiburgGroceriesDataset,FISH,DROP,DROP,class likely reflects packaged shelf-stable fish rather than raw fridge fish

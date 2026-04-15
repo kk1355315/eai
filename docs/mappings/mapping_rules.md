@@ -5,3 +5,5 @@
 - Do not force full dataset coverage.
 - Keep the reason column populated for every dropped class.
 - Mapping quality is more important than public dataset recall.
+- A V1 class may map to one or more FoodKeeper `Product.ID` rows.
+- Multi-target FoodKeeper mappings must default to the most conservative refrigerator guidance.

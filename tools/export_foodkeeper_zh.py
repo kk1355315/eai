@@ -8,7 +8,6 @@ from typing import Any, Callable
 from xml.sax.saxutils import escape
 
 import requests
-from openpyxl import Workbook
 
 SHEET_NAME_ZH = {
     "Version": "版本记录",
@@ -439,6 +438,11 @@ def write_excel_xml(workbook: dict[str, Any], output_path: Path) -> None:
 
 
 def write_xlsx(workbook: dict[str, Any], output_path: Path) -> None:
+    try:
+        from openpyxl import Workbook
+    except ModuleNotFoundError as exc:
+        raise RuntimeError("openpyxl is required to write .xlsx output") from exc
+
     excel = Workbook()
     default_sheet = excel.active
     excel.remove(default_sheet)
