@@ -16,3 +16,6 @@ foodkeeper_zh.xml
 foodkeeper_zh.xlsx
 foodkeeper_sample_20_full_zh.xlsx
 ~$*.xlsx
+
+# Local agent runtime state
+.omx/

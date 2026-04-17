@@ -44,6 +44,7 @@ def validate_manifest(manifest_path: Path, taxonomy_path: Path) -> ValidationRes
     taxonomy_labels = load_taxonomy_labels(Path(taxonomy_path))
     errors: list[str] = []
     image_splits: dict[str, list[str]] = defaultdict(list)
+    image_counts: dict[tuple[str, str], int] = defaultdict(int)
 
     with Path(manifest_path).open("r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
@@ -78,8 +79,15 @@ def validate_manifest(manifest_path: Path, taxonomy_path: Path) -> ValidationRes
                 )
 
             dedupe_key = str(resolved_image_path)
+            image_counts[(dedupe_key, split)] += 1
             if split and split not in image_splits[dedupe_key]:
                 image_splits[dedupe_key].append(split)
+
+        for (image_path, split), count in image_counts.items():
+            if count > 1:
+                errors.append(
+                    f"image '{image_path}' appears multiple times in split '{split}': {count}"
+                )
 
         for image_path, splits in image_splits.items():
             if len(splits) > 1:

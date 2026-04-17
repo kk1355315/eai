@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from tools.build_public_manifest import build_public_manifest
+from tools.validate_manifest import validate_manifest
 
 
 @contextmanager
@@ -99,6 +100,7 @@ class BuildPublicManifestTests(unittest.TestCase):
             self.assertEqual(result.rows_written, 4)
             self.assertEqual(result.warnings, [])
             self.assertEqual(len(rows), 4)
+            self.assertTrue(all(not Path(row["image_path"]).is_absolute() for row in rows))
             self.assertEqual(
                 {(row["source"], row["mapped_label"]) for row in rows},
                 {
@@ -112,6 +114,7 @@ class BuildPublicManifestTests(unittest.TestCase):
             freiburg_rows = [row for row in rows if row["source"] == "FreiburgGroceriesDataset"]
             self.assertEqual(len(freiburg_rows), 2)
             self.assertEqual({row["split"] for row in freiburg_rows}, {"test", "train"})
+            self.assertEqual(validate_manifest(output, taxonomy).errors, [])
 
     def test_raises_when_dataset_contains_unmapped_label(self) -> None:
         with workspace_tempdir() as tmpdir:
@@ -160,3 +163,56 @@ class BuildPublicManifestTests(unittest.TestCase):
                     freiburg_root=freiburg_root,
                     freiburg_mapping_path=freiburg_mapping,
                 )
+
+    def test_deduplicates_duplicate_freiburg_split_entries(self) -> None:
+        with workspace_tempdir() as tmpdir:
+            taxonomy = self.write_csv(
+                tmpdir,
+                "labels.csv",
+                [
+                    "class_id,class_name,class_group,status,foodkeeper_targets,notes",
+                    "0,milk,dairy_egg,active,27,test",
+                ],
+            )
+            grocery_mapping = self.write_csv(
+                tmpdir,
+                "grocery_to_v1.csv",
+                [
+                    "source_dataset,original_fine_label,original_coarse_label,mapped_label,decision,reason",
+                ],
+            )
+            freiburg_mapping = self.write_csv(
+                tmpdir,
+                "freiburg_to_v1.csv",
+                [
+                    "source_dataset,original_label,mapped_label,decision,reason",
+                    "FreiburgGroceriesDataset,MILK,milk,KEEP,test",
+                ],
+            )
+
+            freiburg_root = tmpdir / "freiburg_groceries_dataset"
+            split_dir = freiburg_root / "splits"
+            split_dir.mkdir(parents=True)
+            (split_dir / "train0.txt").write_text("MILK/MILK0001.png 7\nMILK/MILK0001.png 7\n", encoding="utf-8")
+            (split_dir / "test0.txt").write_text("", encoding="utf-8")
+            milk_dir = freiburg_root / "images" / "MILK"
+            milk_dir.mkdir(parents=True)
+            (milk_dir / "MILK0001.png").write_bytes(b"fake")
+
+            output = tmpdir / "public_stage_a.csv"
+
+            result = build_public_manifest(
+                output_path=output,
+                taxonomy_path=taxonomy,
+                grocery_root=tmpdir / "GroceryStoreDataset",
+                grocery_mapping_path=grocery_mapping,
+                freiburg_root=freiburg_root,
+                freiburg_mapping_path=freiburg_mapping,
+            )
+
+            with output.open("r", encoding="utf-8", newline="") as handle:
+                rows = list(csv.DictReader(handle))
+
+            self.assertEqual(result.rows_written, 1)
+            self.assertEqual(len(rows), 1)
+            self.assertTrue(any("deduplicated duplicate manifest row" in warning for warning in result.warnings))

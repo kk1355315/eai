@@ -2,7 +2,7 @@
 
 ## Required Columns
 
-- `image_path`
+- `image_path`: path relative to the manifest file location, never a machine-specific absolute path
 - `source`
 - `original_label`
 - `mapped_label`

@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import csv
 import hashlib
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -24,6 +25,10 @@ OUTPUT_COLUMNS = [
 class BuildResult:
     rows_written: int
     warnings: list[str]
+
+
+def to_manifest_relative_path(image_path: Path, manifest_dir: Path) -> str:
+    return Path(os.path.relpath(image_path, start=manifest_dir)).as_posix()
 
 
 def load_taxonomy_labels(taxonomy_path: Path) -> set[str]:
@@ -91,6 +96,7 @@ def build_grocery_rows(
     grocery_root: Path,
     mapping_path: Path,
     taxonomy_labels: set[str],
+    manifest_dir: Path,
 ) -> tuple[list[dict[str, str]], list[str]]:
     warnings: list[str] = []
     if not grocery_root.exists():
@@ -122,7 +128,7 @@ def build_grocery_rows(
             container_type = "packaged" if "Packages" in image_path.parts else "loose"
             rows.append(
                 {
-                    "image_path": str(image_path.resolve()),
+                    "image_path": to_manifest_relative_path(image_path.resolve(), manifest_dir),
                     "source": "GroceryStoreDataset",
                     "original_label": original_label,
                     "mapped_label": mapping_row["mapped_label"].strip(),
@@ -162,6 +168,7 @@ def build_freiburg_rows(
     freiburg_root: Path,
     mapping_path: Path,
     taxonomy_labels: set[str],
+    manifest_dir: Path,
 ) -> tuple[list[dict[str, str]], list[str]]:
     warnings: list[str] = []
     if not freiburg_root.exists():
@@ -205,7 +212,7 @@ def build_freiburg_rows(
 
         rows.append(
             {
-                "image_path": str(image_path.resolve()),
+                "image_path": to_manifest_relative_path(image_path.resolve(), manifest_dir),
                 "source": "FreiburgGroceriesDataset",
                 "original_label": original_label,
                 "mapped_label": mapping_row["mapped_label"].strip(),
@@ -228,6 +235,31 @@ def write_manifest(rows: list[dict[str, str]], output_path: Path) -> None:
         writer.writerows(rows)
 
 
+def deduplicate_rows(rows: list[dict[str, str]]) -> tuple[list[dict[str, str]], list[str]]:
+    unique_rows: list[dict[str, str]] = []
+    warnings: list[str] = []
+    seen: dict[tuple[str, str], dict[str, str]] = {}
+
+    for row in rows:
+        key = (row["source"], row["image_path"])
+        existing = seen.get(key)
+        if existing is None:
+            seen[key] = row
+            unique_rows.append(row)
+            continue
+
+        if any(existing[column] != row[column] for column in OUTPUT_COLUMNS):
+            raise ValueError(
+                f"conflicting manifest rows found for source '{row['source']}' and image '{row['image_path']}'"
+            )
+
+        warnings.append(
+            f"deduplicated duplicate manifest row for source '{row['source']}' image '{row['image_path']}'"
+        )
+
+    return unique_rows, warnings
+
+
 def build_public_manifest(
     output_path: Path,
     taxonomy_path: Path,
@@ -237,6 +269,7 @@ def build_public_manifest(
     freiburg_mapping_path: Path,
 ) -> BuildResult:
     taxonomy_labels = load_taxonomy_labels(taxonomy_path)
+    manifest_dir = output_path.parent.resolve()
     rows: list[dict[str, str]] = []
     warnings: list[str] = []
 
@@ -244,17 +277,21 @@ def build_public_manifest(
         grocery_root,
         grocery_mapping_path,
         taxonomy_labels,
+        manifest_dir,
     )
     freiburg_rows, freiburg_warnings = build_freiburg_rows(
         freiburg_root,
         freiburg_mapping_path,
         taxonomy_labels,
+        manifest_dir,
     )
 
     rows.extend(grocery_rows)
     rows.extend(freiburg_rows)
     warnings.extend(grocery_warnings)
     warnings.extend(freiburg_warnings)
+    rows, dedupe_warnings = deduplicate_rows(rows)
+    warnings.extend(dedupe_warnings)
 
     rows.sort(key=lambda row: (row["source"], row["split"], row["mapped_label"], row["image_path"]))
     write_manifest(rows, output_path)
