@@ -17,6 +17,13 @@ Build a deployable V1 classifier for Sony Aitrios AI camera workflows using:
 5. Fine-tune with real fridge images
 6. Export and validate on device
 
+## Current Stage A Coverage
+
+- `data/manifests/public_stage_a.csv` is now generated from versioned mapping tables and keeps repository-relative paths
+- The current public-only Stage A data covers `12/22` released V1 classes
+- Missing public classes are `berries`, `broccoli`, `cheese`, `egg`, `fish`, `leafy_greens`, `raw_meat`, `raw_poultry`, `shrimp`, and `tofu`
+- Those classes are expected to come from Stage B fridge images first or from additional public datasets added later
+
 ## References
 
 - ChineseFoodNet paper: `https://arxiv.org/abs/1705.02743`

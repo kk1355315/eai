@@ -19,3 +19,11 @@ foodkeeper_sample_20_full_zh.xlsx
 
 # Local agent runtime state
 .omx/
+
+# Generated training prep outputs
+training/runs/
+.torch-cache/
+
+# Local test scratch directories
+.tmp_testdirs/
+tmp*/
