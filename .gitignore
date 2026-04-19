@@ -8,5 +8,6 @@ __pycache__/
 .tmp_testdirs/
 
 # local datasets and outputs
-/data/external_datasets/
+/data/external_datasets/*
+!/data/external_datasets/README.md
 /training/runs/

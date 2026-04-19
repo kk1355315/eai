@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "release_name": "v1",
+  "description": "Release-layer label selection. This is intentionally separate from discovered_label_catalog.json. Keep this file small and editable as product decisions evolve.",
+  "selection_source": "specs/labels/discovered_label_catalog.json",
+  "selected_labels": [],
+  "notes": [
+    "Populate this file only after product-side filtering.",
+    "Do not delete labels from the discovery catalog when narrowing v1."
+  ]
+}
