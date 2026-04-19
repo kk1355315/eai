@@ -1,41 +1,10 @@
-# Fridge Main Object Classifier
+# eai
 
-Single-main-object image classification project for refrigerator foods and ingredients.
+这个仓库已经清零，准备重新开始。
 
-## Goal
+当前只保留这些确定的东西：
+- `foodkeeper.json`
+- 两个公开数据集名字：`GroceryStoreDataset`、`Freiburg Groceries`
+- 后续训练主线固定为 `MobileNetV2`
 
-Build a deployable V1 classifier for Sony Aitrios AI camera workflows using:
-- public food and grocery datasets for base visual learning
-- real fridge-domain images for target-domain fine-tuning
-
-## Planned Training Flow
-
-1. Define a product-owned taxonomy in `docs/taxonomy/`
-2. Map public dataset labels in `docs/mappings/`
-3. Build unified manifests in `data/manifests/`
-4. Train a base classifier with public data
-5. Fine-tune with real fridge images
-6. Export and validate on device
-
-## Current Stage A Coverage
-
-- `data/manifests/public_stage_a.csv` is now generated from versioned mapping tables and keeps repository-relative paths
-- The current public-only Stage A data covers `12/22` released V1 classes
-- Missing public classes are `berries`, `broccoli`, `cheese`, `egg`, `fish`, `leafy_greens`, `raw_meat`, `raw_poultry`, `shrimp`, and `tofu`
-- Those classes are expected to come from Stage B fridge images first or from additional public datasets added later
-
-## References
-
-- ChineseFoodNet paper: `https://arxiv.org/abs/1705.02743`
-- GroceryStoreDataset: `https://github.com/marcusklasson/GroceryStoreDataset`
-- Sony Aitrios training tutorials: `https://github.com/SonySemiconductorSolutions/aitrios-rpi-tutorials-ai-model-training/tree/main`
-
-## Repository Conventions
-
-- `docs/` holds source-of-truth design artifacts and label policy
-- `data/manifests/` holds CSV manifests, not raw image assets
-- `training/` holds entrypoints and config notes
-- `reports/` holds run outputs promoted to durable documentation
-- `exports/` holds deployable model outputs by version
-- `tools/` holds lightweight project utilities
-- `tests/` holds automated checks for reusable utilities
+这次清零后，旧的计划、旧的类目、旧的映射、旧的 manifest、旧的训练代码、旧的测试都不再继续沿用。

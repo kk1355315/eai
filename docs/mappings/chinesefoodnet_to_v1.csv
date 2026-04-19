@@ -1,5 +1,0 @@
-source_dataset,original_label,mapped_label,decision,reason
-ChineseFoodNet,fried_rice,DROP,DROP,prepared-food label removed from ingredient-first V1 scope
-ChineseFoodNet,egg_tart,DROP,DROP,out of current fridge-value scope
-ChineseFoodNet,noodle_soup,DROP,DROP,prepared-food label removed from ingredient-first V1 scope
-ChineseFoodNet,braised_mixed_vegetables,DROP,DROP,visually unstable and outside ingredient-first V1 scope
