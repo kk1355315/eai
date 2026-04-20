@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "release_name": "v2",
+  "description": "Release-layer label selection for the first expansion wave beyond v1. This extends the v1 core set with the previously shortlisted wave-2 fridge labels.",
+  "selection_source": "specs/labels/discovered_label_catalog.json",
+  "selected_labels": [
+    "apple",
+    "banana",
+    "cabbage",
+    "carrots",
+    "cucumber",
+    "mushroom",
+    "onion",
+    "bell_pepper",
+    "potato",
+    "zucchini",
+    "packaged_dairy_milk",
+    "dairy_yoghurt",
+    "asparagus",
+    "eggplant",
+    "avocado",
+    "kiwi",
+    "lemon",
+    "lime",
+    "orange",
+    "watermelon",
+    "soy_milk",
+    "packaged_juice"
+  ],
+  "notes": [
+    "This v2 release extends the v1 fridge-first core with the previously shortlisted wave-2 labels.",
+    "The selection still excludes pantry-heavy packaged grocery classes and labels missing from the discovery catalog.",
+    "Use the same pretrained MobileNetV2 baseline configuration first unless later experiments justify a different default."
+  ]
+}

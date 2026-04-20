@@ -1,0 +1,23 @@
+class_id,class_name,class_group,status,foodkeeper_ids,storage_field,storage_min_days,storage_max_days,source_datasets,notes
+0,apple,produce,active,[248],DOP_Refrigerate,28,42,"[""GroceryStoreDataset""]",Single FoodKeeper anchor.
+1,banana,produce,active,[251],Refrigerate,3,3,"[""GroceryStoreDataset""]",Single FoodKeeper anchor.
+2,cabbage,produce,active,[278],DOP_Refrigerate,7,14,"[""GroceryStoreDataset""]",Single FoodKeeper anchor.
+3,carrots,produce,active,[279],DOP_Refrigerate,14,21,"[""GroceryStoreDataset""]",Mapped through FoodKeeper carrots/parsnips anchor.
+4,cucumber,produce,active,[283],DOP_Refrigerate,4,6,"[""GroceryStoreDataset""]",Single FoodKeeper anchor.
+5,mushroom,produce,active,[292],DOP_Refrigerate,3,7,"[""GroceryStoreDataset""]",Single FoodKeeper anchor.
+6,onion,produce,active,[294],DOP_Refrigerate,60,60,"[""GroceryStoreDataset""]","Bound specifically to yellow/white/red onion item, not spring onion."
+7,bell_pepper,produce,active,[296],DOP_Refrigerate,4,14,"[""GroceryStoreDataset""]",Source fine classes were bell pepper color variants.
+8,potato,produce,active,[297],DOP_Refrigerate,7,14,"[""GroceryStoreDataset""]",Sweet potato was excluded because its nearest FoodKeeper item lacked usable numeric support.
+9,zucchini,produce,active,[547],Refrigerate,7,7,"[""GroceryStoreDataset""]",Exact zucchini anchor chosen; broader squash item was not merged because delta exceeded 2 days.
+10,packaged_dairy_milk,dairy,active,"[543, 644]",Refrigerate_After_Opening,5,7,"[""GroceryStoreDataset"", ""Freiburg Groceries""]",Grouped by nearby numeric anchors; 659 was intentionally not merged because it pushed max delta to 3 days.
+11,dairy_yoghurt,dairy,active,[33],DOP_Refrigerate,7,14,"[""GroceryStoreDataset""]",Dairy yogurt only; plant yogurts were intentionally excluded.
+12,asparagus,produce,active,[271],DOP_Refrigerate,3,4,"[""GroceryStoreDataset""]",Single FoodKeeper anchor.
+13,eggplant,produce,active,[284],DOP_Refrigerate,4,7,"[""GroceryStoreDataset""]",Aubergine mapped to FoodKeeper eggplant.
+14,avocado,produce,active,[250],Refrigerate,3,4,"[""GroceryStoreDataset""]",Single FoodKeeper anchor.
+15,kiwi,produce,active,[263],Refrigerate,3,6,"[""GroceryStoreDataset""]",Single FoodKeeper anchor.
+16,lemon,produce,active,[256],DOP_Refrigerate,10,21,"[""GroceryStoreDataset""]",Mapped through FoodKeeper citrus fruit anchor.
+17,lime,produce,active,[256],DOP_Refrigerate,10,21,"[""GroceryStoreDataset""]",Mapped through FoodKeeper citrus fruit anchor.
+18,orange,produce,active,[256],DOP_Refrigerate,10,21,"[""GroceryStoreDataset""]",Mapped through FoodKeeper citrus fruit anchor.
+19,watermelon,produce,active,[495],DOP_Refrigerate,3,4,"[""GroceryStoreDataset""]",Separated from melon due to timing gap > 2 days.
+20,soy_milk,produce,active,"[408, 421]",Refrigerate_After_Opening,7,10,"[""GroceryStoreDataset""]",Two soy-milk-compatible numeric anchors with identical range.
+21,packaged_juice,produce,active,"[404, 405, 455]",Refrigerate_After_Opening,7,12,"[""GroceryStoreDataset"", ""Freiburg Groceries""]",Commercial packaged ready-to-drink juice across both datasets.

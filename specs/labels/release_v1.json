@@ -3,9 +3,24 @@
   "release_name": "v1",
   "description": "Release-layer label selection. This is intentionally separate from discovered_label_catalog.json. Keep this file small and editable as product decisions evolve.",
   "selection_source": "specs/labels/discovered_label_catalog.json",
-  "selected_labels": [],
+  "selected_labels": [
+    "apple",
+    "banana",
+    "cabbage",
+    "carrots",
+    "cucumber",
+    "mushroom",
+    "onion",
+    "bell_pepper",
+    "potato",
+    "zucchini",
+    "packaged_dairy_milk",
+    "dairy_yoghurt"
+  ],
   "notes": [
-    "Populate this file only after product-side filtering.",
-    "Do not delete labels from the discovery catalog when narrowing v1."
+    "This v1 release intentionally favors common fridge items with stable visual boundaries and direct FoodKeeper alignment.",
+    "See docs/labels/release_v1_selection_rationale.md for the selection criteria and per-label rationale.",
+    "Labels kept out of v1 should remain in the discovery catalog for later release waves.",
+    "See docs/labels/release_v1_expansion_plan.md for the staged follow-up expansion shortlist."
   ]
 }
