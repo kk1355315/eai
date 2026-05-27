@@ -1,0 +1,22 @@
+description: Ultralytics YOLO11n model trained on /Users/wow/Downloads/yolo26-11111/data_yolo11_detect.yaml
+author: Ultralytics
+date: '2026-05-21T13:01:16.360574'
+version: 8.4.52
+license: AGPL-3.0 License (https://ultralytics.com/license)
+docs: https://docs.ultralytics.com
+stride: 32
+task: detect
+batch: 1
+imgsz:
+- 640
+- 640
+names:
+  0: apple
+  1: banana
+  2: litchi
+  3: pear
+args:
+  batch: 1
+  half: false
+channels: 3
+end2end: false

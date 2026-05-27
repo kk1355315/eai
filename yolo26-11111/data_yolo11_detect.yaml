@@ -1,0 +1,11 @@
+path: detect_yolo11
+train: train/images
+val: valid/images
+test: test/images
+
+nc: 4
+names:
+  0: apple
+  1: banana
+  2: litchi
+  3: pear
