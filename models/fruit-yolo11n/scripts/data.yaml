@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 4
+names: ['apple', 'banana', 'litchi', 'pear']
+
+roboflow:
+  workspace: keyezixins-workspace
+  project: keyezixins-workspace
+  version: dataset
+  license: Private
+  url: https://app.roboflow.com/keyezixins-workspace/keyezixins-workspace/dataset

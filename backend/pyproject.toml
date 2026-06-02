@@ -1,0 +1,19 @@
+[project]
+name = "fruit-health-backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.136.3",
+    "httpx[socks]>=0.28.1",
+    "pydantic-settings>=2.14.1",
+    "pytest>=9.0.3",
+    "python-multipart>=0.0.29",
+    "sqlmodel>=0.0.38",
+    "uvicorn[standard]>=0.48.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

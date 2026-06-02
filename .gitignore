@@ -1,13 +1,17 @@
+.venv/
+.venv-*/
 __pycache__/
 *.py[cod]
 .pytest_cache/
-.ipynb_checkpoints/
-
-# local runtime state
-.omx/
-.tmp_testdirs/
-
-# local datasets and outputs
-/data/external_datasets/*
-!/data/external_datasets/README.md
-/training/runs/
+*.db
+*.sqlite
+*.sqlite3
+.env
+*.log.tmp
+runs/
+train/
+valid/
+test/
+detect_split/
+*.cache
+roboflow.zip

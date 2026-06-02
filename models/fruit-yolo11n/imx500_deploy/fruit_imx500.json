@@ -1,0 +1,16 @@
+{
+  "imx500_object_detection": {
+    "max_detections": 20,
+    "threshold": 0.25,
+    "network_file": "/home/kk/fruit-imx500/fruit.rpk",
+    "classes": [
+      "apple",
+      "banana",
+      "litchi",
+      "pear"
+    ]
+  },
+  "object_detect_draw_cv": {
+    "line_thickness": 2
+  }
+}

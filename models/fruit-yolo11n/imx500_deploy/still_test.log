@@ -1,0 +1,27 @@
+[0:06:05.316424982] [1912]  INFO Camera camera_manager.cpp:340 libcamera v0.7.0+rpt20260205
+[0:06:05.436417868] [1915]  INFO IPAProxy ipa_proxy.cpp:180 Using tuning file /usr/share/libcamera/ipa/rpi/vc4/imx500.json
+[0:06:05.450546624] [1915]  INFO Camera camera_manager.cpp:223 Adding camera '/base/soc/i2c0mux/i2c@1/imx500@1a' for pipeline handler rpi/vc4
+[0:06:05.450691425] [1915]  INFO RPI vc4.cpp:445 Registered camera /base/soc/i2c0mux/i2c@1/imx500@1a to Unicam device /dev/media0 and ISP device /dev/media1
+[0:06:05.450754710] [1915]  INFO RPI pipeline_base.cpp:1117 Using configuration file '/usr/share/libcamera/pipeline/rpi/vc4/rpi_apps.yaml'
+IMX500: Unable to set absolute ROI
+Reading post processing stage "imx500_object_detection"
+
+------------------------------------------------------------------------------------------------------------------
+NOTE: Loading network firmware onto the IMX500 can take several minutes, please do not close down the application.
+------------------------------------------------------------------------------------------------------------------
+
+Reading post processing stage "object_detect_draw_cv"
+Mode selection for 2028:1520:12:P
+    SRGGB10_CSI2P,2028x1520/0 - Score: 1000
+    SRGGB10_CSI2P,4056x3040/0 - Score: 1887
+Stream configuration adjusted
+[0:06:05.681274780] [1912]  INFO Camera camera.cpp:1215 configuring streams: (0) 2028x1520-YUV420/sYCC (1) 2028x1520-SRGGB10_CSI2P/RAW
+[0:06:05.681920446] [1915]  INFO RPI vc4.cpp:620 Sensor: /base/soc/i2c0mux/i2c@1/imx500@1a - Selected sensor format: 2028x1520-SRGGB10_1X10/RAW - Selected unicam format: 2028x1520-pRAA/RAW
+Network Firmware Upload: 0% (0/3120 KB)Network Firmware Upload: 0% (0/3120 KB)Network Firmware Upload: 0% (0/3120 KB)Network Firmware Upload: 32% (1024/3120 KB)Network Firmware Upload: 32% (1024/3120 KB)Network Firmware Upload: 65% (2048/3120 KB)Network Firmware Upload: 98% (3072/3120 KB)Mode selection for 4056:3040:12:P
+    SRGGB10_CSI2P,2028x1520/0 - Score: 8096
+    SRGGB10_CSI2P,4056x3040/0 - Score: 1000
+Stream configuration adjusted
+[0:06:09.665091157] [1912]  INFO Camera camera.cpp:1215 configuring streams: (0) 4056x3040-YUV420/sYCC (1) 4056x3040-SRGGB10_CSI2P/RAW
+[0:06:09.669226570] [1915]  INFO RPI vc4.cpp:620 Sensor: /base/soc/i2c0mux/i2c@1/imx500@1a - Selected sensor format: 4056x3040-SRGGB10_1X10/RAW - Selected unicam format: 4056x3040-pRAA/RAW
+Network Firmware Upload: 100% (3120/3120 KB)
+Still capture image received
