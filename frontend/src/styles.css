@@ -7,10 +7,10 @@
   --green: #28b44b;
   --orange: #ff8a16;
   --red: #ff453a;
-  --glass-fill: rgba(255, 255, 255, 0.38);
-  --glass-fill-strong: rgba(255, 255, 255, 0.62);
-  --glass-border: rgba(255, 255, 255, 0.86);
-  --glass-shadow: 0 24px 70px rgba(24, 42, 63, 0.18);
+  --glass-fill: rgba(255, 255, 255, 0.14);
+  --glass-fill-strong: rgba(255, 255, 255, 0.24);
+  --glass-border: rgba(255, 255, 255, 0.64);
+  --glass-shadow: 0 24px 72px rgba(24, 42, 63, 0.2);
   font-family:
     -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", Inter,
     ui-sans-serif, system-ui, "Segoe UI", sans-serif;
@@ -57,8 +57,8 @@ button {
   border: 1px solid rgba(255, 255, 255, 0.74);
   border-radius: 8px;
   background:
-    linear-gradient(180deg, rgba(250, 252, 253, 0.9), rgba(235, 240, 244, 0.82)),
-    rgba(246, 248, 250, 0.88);
+    linear-gradient(180deg, rgba(250, 252, 253, 0.72), rgba(229, 235, 240, 0.66)),
+    rgba(246, 248, 250, 0.58);
   box-shadow:
     0 38px 110px rgba(18, 35, 52, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.94);
@@ -75,16 +75,18 @@ button {
 .phone::before {
   inset: -16%;
   background:
-    linear-gradient(116deg, rgba(255, 255, 255, 0.72), transparent 32%),
-    linear-gradient(180deg, transparent, rgba(185, 198, 209, 0.22));
-  filter: blur(14px) saturate(1.08);
+    radial-gradient(ellipse at 20% 8%, rgba(255, 255, 255, 0.78), transparent 34%),
+    radial-gradient(ellipse at 92% 28%, rgba(195, 216, 232, 0.34), transparent 28%),
+    radial-gradient(ellipse at 18% 84%, rgba(207, 218, 227, 0.46), transparent 32%),
+    linear-gradient(145deg, transparent 0 30%, rgba(255, 255, 255, 0.38) 44%, transparent 62%);
+  filter: blur(22px) saturate(1.12);
 }
 
 .phone::after {
   inset: 0;
   background:
     linear-gradient(115deg, rgba(255, 255, 255, 0.38), transparent 30% 78%, rgba(255, 255, 255, 0.2));
-  opacity: 0.62;
+  opacity: 0.5;
   mix-blend-mode: soft-light;
 }
 
@@ -131,8 +133,8 @@ button {
   border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: 8px;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.32)),
-    rgba(255, 255, 255, 0.38);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.12)),
+    rgba(255, 255, 255, 0.08);
   color: #186ac6;
   box-shadow:
     inset 1px 1px 0 rgba(255, 255, 255, 0.8),
@@ -165,15 +167,16 @@ button {
   border: 1px solid var(--glass-border);
   border-radius: 8px;
   background:
-    linear-gradient(138deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.34) 48%, rgba(248, 250, 252, 0.55)),
+    linear-gradient(138deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.11) 44%, rgba(255, 255, 255, 0.05) 63%, rgba(255, 255, 255, 0.24)),
     var(--glass-fill);
   box-shadow:
-    inset 1px 1px 0 rgba(255, 255, 255, 0.96),
-    inset -1px -1px 0 rgba(75, 104, 134, 0.1),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.24),
-    inset 0 -14px 28px rgba(255, 255, 255, 0.22),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.88),
+    inset -1px -1px 0 rgba(75, 104, 134, 0.18),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+    inset 0 -18px 32px rgba(255, 255, 255, 0.1),
     var(--glass-shadow);
-  backdrop-filter: blur(32px) saturate(1.75) contrast(1.04);
+  -webkit-backdrop-filter: blur(34px) saturate(1.9) contrast(1.08) brightness(1.04);
+  backdrop-filter: blur(34px) saturate(1.9) contrast(1.08) brightness(1.04);
   transition:
     transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
     box-shadow 220ms ease,
@@ -195,12 +198,13 @@ button {
   border-radius: inherit;
   pointer-events: none;
   background:
-    radial-gradient(circle at 9% 7%, rgba(255, 255, 255, 0.96) 0 1.5px, rgba(255, 255, 255, 0.5) 2px, transparent 18px),
-    radial-gradient(circle at 91% 8%, rgba(255, 255, 255, 0.86) 0 1px, rgba(255, 255, 255, 0.42) 2px, transparent 22px),
-    linear-gradient(116deg, rgba(255, 255, 255, 0.78), transparent 32% 72%, rgba(255, 255, 255, 0.28)),
-    linear-gradient(105deg, transparent 0 36%, rgba(255, 255, 255, 0.38) var(--pointer-x), transparent 72%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.42), transparent 42%);
-  opacity: 0.9;
+    radial-gradient(circle at 7% 7%, rgba(255, 255, 255, 0.98) 0 1.5px, rgba(255, 255, 255, 0.62) 2px, transparent 22px),
+    radial-gradient(circle at 93% 8%, rgba(255, 255, 255, 0.9) 0 1px, rgba(255, 255, 255, 0.48) 2px, transparent 24px),
+    radial-gradient(circle at 94% 92%, rgba(255, 255, 255, 0.72) 0 1px, transparent 22px),
+    linear-gradient(116deg, rgba(255, 255, 255, 0.72), transparent 30% 74%, rgba(255, 255, 255, 0.26)),
+    linear-gradient(105deg, transparent 0 34%, rgba(255, 255, 255, 0.42) var(--pointer-x), transparent 72%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28), transparent 46%);
+  opacity: 0.95;
   mix-blend-mode: screen;
 }
 
@@ -226,7 +230,7 @@ button {
   gap: 10px;
   padding: 22px;
   background:
-    linear-gradient(132deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.28) 46%, rgba(244, 248, 251, 0.62)),
+    linear-gradient(132deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.08) 46%, rgba(244, 248, 251, 0.18)),
     var(--glass-fill-strong);
 }
 
@@ -266,8 +270,8 @@ button {
   aspect-ratio: 1;
   border-radius: 8px;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.2)),
-    rgba(255, 255, 255, 0.36);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.08)),
+    rgba(255, 255, 255, 0.08);
   box-shadow:
     inset 2px 2px 2px rgba(255, 255, 255, 0.74),
     inset -2px -2px 8px rgba(65, 98, 130, 0.1),
@@ -321,8 +325,8 @@ button {
   padding: 12px;
   border-radius: 8px;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.24)),
-    rgba(255, 255, 255, 0.28);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.08)),
+    rgba(255, 255, 255, 0.06);
   box-shadow:
     inset 1px 1px 0 rgba(255, 255, 255, 0.74),
     inset -1px -1px 0 rgba(54, 83, 116, 0.08),
@@ -343,7 +347,9 @@ button {
 .mini-card span {
   margin-top: 5px;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
+  line-height: 1.15;
+  white-space: nowrap;
 }
 
 .mini-visual,
@@ -354,8 +360,8 @@ button {
   aspect-ratio: 1;
   border-radius: 8px;
   background:
-    linear-gradient(140deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.28)),
-    rgba(255, 255, 255, 0.36);
+    linear-gradient(140deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.08)),
+    rgba(255, 255, 255, 0.08);
   box-shadow:
     inset 1px 1px 0 rgba(255, 255, 255, 0.8),
     inset -1px -1px 0 rgba(43, 72, 102, 0.1),
@@ -399,8 +405,8 @@ button {
   padding: 10px;
   border-radius: 8px;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.26)),
-    rgba(255, 255, 255, 0.3);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.08)),
+    rgba(255, 255, 255, 0.06);
   box-shadow:
     inset 1px 1px 0 rgba(255, 255, 255, 0.72),
     0 10px 20px rgba(31, 54, 82, 0.06);
@@ -434,8 +440,8 @@ button {
   border: 1px solid rgba(255, 255, 255, 0.68);
   border-radius: 8px;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.26)),
-    rgba(255, 255, 255, 0.3);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.08)),
+    rgba(255, 255, 255, 0.06);
   box-shadow:
     inset 1px 1px 0 rgba(255, 255, 255, 0.72),
     0 10px 20px rgba(31, 54, 82, 0.06);
@@ -461,7 +467,7 @@ button {
   align-items: center;
   gap: 16px;
   background:
-    linear-gradient(128deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.25)),
+    linear-gradient(128deg, rgba(255, 255, 255, 0.36), rgba(255, 255, 255, 0.08)),
     var(--glass-fill);
 }
 
@@ -481,8 +487,8 @@ button {
   height: 58px;
   border-radius: 8px;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.85), rgba(10, 132, 255, 0.18)),
-    rgba(220, 238, 255, 0.6);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.52), rgba(10, 132, 255, 0.12)),
+    rgba(220, 238, 255, 0.16);
   color: var(--blue);
   box-shadow:
     inset 1px 1px 0 rgba(255, 255, 255, 0.9),
@@ -653,8 +659,8 @@ button {
   width: 76px;
   height: 76px;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(220, 238, 251, 0.46)),
-    #e8f2fb;
+    linear-gradient(135deg, rgba(255, 255, 255, 0.46), rgba(220, 238, 251, 0.16)),
+    rgba(232, 242, 251, 0.22);
   color: #1f3352;
   font-size: 24px;
 }
@@ -697,9 +703,9 @@ button {
   margin: 0 18px 18px;
   padding: 9px;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.24)),
-    linear-gradient(102deg, transparent 0 30%, rgba(255, 255, 255, 0.44) var(--pointer-x), transparent 72%),
-    rgba(244, 250, 253, 0.5);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.36), rgba(255, 255, 255, 0.08)),
+    linear-gradient(102deg, transparent 0 30%, rgba(255, 255, 255, 0.48) var(--pointer-x), transparent 72%),
+    rgba(244, 250, 253, 0.14);
   box-shadow:
     inset 1px 1px 0 rgba(255, 255, 255, 0.92),
     inset -1px -1px 0 rgba(54, 83, 116, 0.12),
@@ -716,8 +722,8 @@ button {
   border: 1px solid rgba(255, 255, 255, 0.82);
   border-radius: 8px;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.26)),
-    rgba(255, 255, 255, 0.42);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.1)),
+    rgba(255, 255, 255, 0.12);
   box-shadow:
     inset 1px 1px 0 rgba(255, 255, 255, 0.94),
     inset -1px -1px 0 rgba(10, 132, 255, 0.14),
@@ -785,7 +791,7 @@ button {
     box-shadow:
       inset 1px 1px 0 rgba(255, 255, 255, 0.96),
       inset -1px -1px 0 rgba(75, 104, 134, 0.1),
-      inset 0 -14px 28px rgba(255, 255, 255, 0.22),
+      inset 0 -14px 28px rgba(255, 255, 255, 0.16),
       0 30px 84px rgba(20, 40, 60, 0.22);
     transform: translateY(-5px) scale(1.015);
   }
