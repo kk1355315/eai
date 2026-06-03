@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties, PointerEvent } from "react";
 import { getInventory, InventoryItem, StorageState } from "./api";
+import appleImage from "./assets/fruits/apple.png";
+import bananaImage from "./assets/fruits/banana.png";
+import litchiImage from "./assets/fruits/litchi.png";
+import pearImage from "./assets/fruits/pear.png";
 
 type Tab = "home" | "inventory" | "profile";
 
@@ -8,7 +12,7 @@ type FruitView = {
   id: number;
   label: string;
   name: string;
-  emoji: string;
+  image: string;
   quantity: number;
   unit: string;
   state: StorageState;
@@ -19,11 +23,11 @@ type FruitView = {
 
 type DataStatus = "loading" | "ready" | "empty" | "fallback";
 
-const fruitMeta: Record<string, { name: string; emoji: string }> = {
-  apple: { name: "苹果", emoji: "🍎" },
-  banana: { name: "香蕉", emoji: "🍌" },
-  litchi: { name: "荔枝", emoji: "🍒" },
-  pear: { name: "梨", emoji: "🍐" },
+const fruitMeta: Record<string, { name: string; image: string }> = {
+  apple: { name: "苹果", image: appleImage },
+  banana: { name: "香蕉", image: bananaImage },
+  litchi: { name: "荔枝", image: litchiImage },
+  pear: { name: "梨", image: pearImage },
 };
 
 const fallbackInventory: FruitView[] = [
@@ -31,7 +35,7 @@ const fallbackInventory: FruitView[] = [
     id: 1,
     label: "apple",
     name: "苹果",
-    emoji: "🍎",
+    image: appleImage,
     quantity: 2,
     unit: "个",
     state: "fresh",
@@ -43,7 +47,7 @@ const fallbackInventory: FruitView[] = [
     id: 2,
     label: "banana",
     name: "香蕉",
-    emoji: "🍌",
+    image: bananaImage,
     quantity: 4,
     unit: "根",
     state: "eat_soon",
@@ -55,7 +59,7 @@ const fallbackInventory: FruitView[] = [
     id: 3,
     label: "litchi",
     name: "荔枝",
-    emoji: "🍒",
+    image: litchiImage,
     quantity: 8,
     unit: "个",
     state: "fresh",
@@ -67,7 +71,7 @@ const fallbackInventory: FruitView[] = [
     id: 4,
     label: "pear",
     name: "梨",
-    emoji: "🍐",
+    image: pearImage,
     quantity: 1,
     unit: "个",
     state: "fresh",
@@ -94,7 +98,7 @@ function toFruitView(item: InventoryItem): FruitView | null {
     id: item.id,
     label,
     name: meta.name,
-    emoji: meta.emoji,
+    image: meta.image,
     quantity: item.confirmed_quantity,
     unit: item.unit || "个",
     state: item.storage_state,
@@ -257,9 +261,7 @@ function HomePage({
           <p>{heroDescription(topFruit)}</p>
           <div className="freshness-chip">{itemSummary(topFruit)}</div>
         </div>
-        <div className="hero-emoji" aria-hidden="true">
-          {topFruit.emoji}
-        </div>
+        <FruitImage className="hero-visual" item={topFruit} />
       </section>
 
       <section className="panel">
@@ -277,7 +279,7 @@ function HomePage({
           <div className="expiring-row">
             {expiring.slice(0, 3).map((item) => (
               <div className="expire-item" key={item.id}>
-                <span className="expire-emoji">{item.emoji}</span>
+              <FruitImage className="expire-visual" item={item} />
                 <strong>{item.name}</strong>
                 <span>{remainingText(item)}</span>
               </div>
@@ -368,7 +370,7 @@ function ProfilePage() {
 function FruitMiniCard({ item }: { item: FruitView }) {
   return (
     <div className="mini-card">
-      <span className="mini-emoji">{item.emoji}</span>
+      <FruitImage className="mini-visual" item={item} />
       <div>
         <strong>{item.name}</strong>
         <span>{itemSummary(item)}</span>
@@ -383,7 +385,7 @@ function FruitRow({ item }: { item: FruitView }) {
 
   return (
     <article className="fruit-row">
-      <span className="fruit-emoji">{item.emoji}</span>
+      <FruitImage className="fruit-visual" item={item} />
       <div className="fruit-main">
         <strong>{item.name}</strong>
         <span>
@@ -414,6 +416,14 @@ function ProfileItem({ icon, title, tags }: { icon: string; title: string; tags:
         </div>
       </div>
     </section>
+  );
+}
+
+function FruitImage({ className, item }: { className: string; item: FruitView }) {
+  return (
+    <span className={className}>
+      <img alt={item.name} src={item.image} />
+    </span>
   );
 }
 
@@ -456,6 +466,10 @@ function BottomNav({ activeTab, onChange }: { activeTab: Tab; onChange: (tab: Ta
           onClick={(event) => {
             event.currentTarget.blur();
             onChange(tab.id);
+            requestAnimationFrame(() => {
+              document.querySelector(".phone")?.scrollTo({ top: 0, behavior: "auto" });
+              document.querySelector(".page")?.scrollTo({ top: 0, behavior: "auto" });
+            });
           }}
           type="button"
         >
