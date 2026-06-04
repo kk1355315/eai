@@ -1,17 +1,26 @@
 .viewport {
+  --bottom-nav-height: 120px;
+  --bottom-nav-offset: max(24px, env(safe-area-inset-bottom));
+  --content-bottom-gap: 48px;
+  --content-bottom-padding: calc(
+    var(--bottom-nav-height) + var(--bottom-nav-offset) + var(--content-bottom-gap)
+  );
+
   display: flex;
   width: 100%;
   min-height: 100vh;
+  min-height: 100svh;
   justify-content: center;
   padding: 0;
 }
 
 .phoneFrame {
   position: relative;
-  width: min(100vw, 941px);
-  min-height: 1672px;
+  width: min(100%, var(--app-max-width));
+  min-height: 100vh;
+  min-height: 100svh;
   margin: 0 auto;
-  overflow: hidden;
+  overflow: visible;
   border-radius: 48px;
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.18)),
@@ -19,8 +28,10 @@
 }
 
 .content {
-  min-height: 1672px;
-  padding: 103px 67px 186px 74px;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: 103px 67px var(--content-bottom-padding) 74px;
 }
 
 .header {
@@ -90,7 +101,8 @@
   }
 
   .phoneFrame {
-    min-height: 1672px;
+    min-height: 100vh;
+    min-height: 100svh;
     padding: 0;
     border: 1px solid rgba(255, 255, 255, 0.72);
     border-radius: 48px;
@@ -104,7 +116,39 @@
   }
 
   .content {
-    min-height: 1672px;
+    min-height: 100vh;
+    min-height: 100svh;
+  }
+}
+
+@media (max-width: 760px) {
+  .viewport {
+    --bottom-nav-height: 96px;
+    --bottom-nav-offset: max(14px, env(safe-area-inset-bottom));
+    --content-bottom-gap: 34px;
+  }
+
+  .phoneFrame {
+    border-radius: 0;
+  }
+
+  .content {
+    padding: 72px 28px var(--content-bottom-padding);
+  }
+
+  .header,
+  .inventoryPage .header,
+  .profilePage .header,
+  .homePage .header {
+    margin-bottom: 28px;
+  }
+
+  .title {
+    font-size: 52px;
+  }
+
+  .subtitle {
+    font-size: 26px;
   }
 }
 

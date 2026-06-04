@@ -15,7 +15,7 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: center;
-  width: 797px;
+  width: min(100%, 797px);
   height: 189px;
   margin: 0 0 36px -3px;
   padding: 0;
@@ -58,8 +58,8 @@
 
 .inventory-list {
   display: grid;
-  width: 798px;
-  height: 1107px;
+  width: min(100%, 798px);
+  min-height: 0;
   margin-left: -4px;
   padding: 0 42px;
 }
@@ -184,7 +184,7 @@
 
 .inventory-state-card {
   display: grid;
-  width: 797px;
+  width: min(100%, 797px);
   justify-items: start;
   gap: 14px;
   padding: 34px;
@@ -214,4 +214,96 @@
   color: white;
   background: #2584ff;
   font-weight: 760;
+}
+
+@media (max-width: 760px) {
+  .inventory-summary-card,
+  .inventory-list,
+  .inventory-state-card {
+    margin-left: 0;
+    border-radius: 28px;
+  }
+
+  .inventory-summary-card {
+    height: auto;
+    min-height: 132px;
+    margin-bottom: 24px;
+  }
+
+  .inventory-summary-stat {
+    height: 78px;
+    gap: 14px;
+  }
+
+  .inventory-summary-stat strong {
+    font-size: 42px;
+    line-height: 36px;
+  }
+
+  .inventory-summary-stat span {
+    font-size: 18px;
+    line-height: 22px;
+  }
+
+  .inventory-list {
+    padding: 0 20px;
+  }
+
+  .inventory-row {
+    grid-template-columns: 72px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "image copy chevron"
+      "image progress state";
+    gap: 8px 14px;
+    min-height: 118px;
+    padding: 18px 0;
+  }
+
+  .inventory-food-image {
+    grid-area: image;
+    width: 58px;
+    height: 64px;
+  }
+
+  .inventory-food-image img {
+    max-width: 58px;
+    max-height: 64px;
+  }
+
+  .inventory-food-image span,
+  .inventory-food-image.dairy span,
+  .inventory-food-image.eggs span,
+  .inventory-food-image.drinks span {
+    font-size: 48px;
+  }
+
+  .inventory-row-copy {
+    grid-area: copy;
+  }
+
+  .inventory-food-title {
+    font-size: 24px;
+    line-height: 28px;
+  }
+
+  .inventory-food-meta {
+    margin-top: 8px;
+    font-size: 17px;
+    line-height: 22px;
+  }
+
+  .inventory-progress-track {
+    grid-area: progress;
+    width: min(100%, 154px);
+  }
+
+  .inventory-state-label {
+    grid-area: state;
+    font-size: 17px;
+    line-height: 22px;
+  }
+
+  .inventory-chevron {
+    grid-area: chevron;
+  }
 }
