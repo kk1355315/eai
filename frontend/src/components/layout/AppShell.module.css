@@ -1,0 +1,126 @@
+.viewport {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  justify-content: center;
+  padding: 0;
+}
+
+.phoneFrame {
+  position: relative;
+  width: min(100vw, 941px);
+  min-height: 1672px;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 48px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.18)),
+    rgba(231, 242, 253, 0.32);
+}
+
+.content {
+  min-height: 1672px;
+  padding: 103px 67px 186px 74px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 38px;
+}
+
+.inventoryPage .header {
+  margin-bottom: 12px;
+}
+
+.profilePage .header {
+  margin-bottom: 52px;
+}
+
+.homePage .header {
+  margin-bottom: 49px;
+}
+
+.title {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 70px;
+  font-weight: 850;
+  line-height: 0.98;
+  letter-spacing: 0;
+}
+
+.subtitle {
+  margin: 17px 0 0;
+  color: var(--color-muted);
+  font-size: 34px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.languageButton {
+  display: none;
+  min-width: 58px;
+  height: 38px;
+  margin-top: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.86);
+  border-radius: 14px;
+  color: var(--color-primary);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.58));
+  box-shadow: 0 12px 28px rgba(66, 96, 128, 0.12);
+  backdrop-filter: blur(18px) saturate(1.12);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.languageButton:focus-visible {
+  outline: 3px solid rgba(37, 132, 255, 0.24);
+  outline-offset: 3px;
+}
+
+@media (min-width: 760px) {
+  .viewport {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .phoneFrame {
+    min-height: 1672px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    border-radius: 48px;
+    background:
+      linear-gradient(145deg, rgba(255, 255, 255, 0.36), rgba(255, 255, 255, 0.12)),
+      rgba(232, 244, 255, 0.22);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.58),
+      0 28px 80px rgba(66, 96, 128, 0.14);
+    backdrop-filter: blur(16px) saturate(1.08);
+  }
+
+  .content {
+    min-height: 1672px;
+  }
+}
+
+@media (max-width: 380px) {
+  .title {
+    font-size: 48px;
+  }
+
+  .content {
+    padding-right: 24px;
+    padding-left: 24px;
+  }
+}
+
+@media (max-width: 340px) {
+  .title {
+    font-size: 44px;
+  }
+}

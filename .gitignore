@@ -1,5 +1,10 @@
 .venv/
 .venv-*/
+node_modules/
+dist/
+frontend/tmp-chrome*/
+frontend/tmp-edge*/
+frontend/pixel-shots/
 __pycache__/
 *.py[cod]
 .pytest_cache/

@@ -1,0 +1,41 @@
+.badge {
+  display: inline-flex;
+  max-width: 100%;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 11px;
+  border-radius: 8px;
+  background: rgba(109, 124, 152, 0.1);
+  color: var(--color-inactive);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.fresh {
+  color: var(--color-fresh);
+  background: rgba(66, 189, 77, 0.12);
+}
+
+.eat_soon {
+  color: var(--color-eat-soon);
+  background: rgba(255, 138, 0, 0.13);
+}
+
+.check_required {
+  color: var(--color-check-required);
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.not_recommended {
+  color: var(--color-not-recommended);
+  background: rgba(139, 94, 99, 0.12);
+}
+
+.inactive {
+  color: var(--color-inactive);
+  background: rgba(109, 124, 152, 0.12);
+}
