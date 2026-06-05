@@ -11,12 +11,12 @@ export const inventoryQueryKey = ["inventory"] as const;
 export const storageStatesQueryKey = ["inventory", "storage-states"] as const;
 
 export async function fetchInventory(): Promise<InventoryItem[]> {
-  const items = await apiRequest<InventoryItem[]>("/api/inventory");
+  const items = await apiRequest<InventoryItem[]>("/inventory");
   return filterSupportedInventory(items);
 }
 
 export async function fetchStorageStates(): Promise<InventoryItem[]> {
-  const items = await apiRequest<InventoryItem[]>("/api/inventory/storage-states");
+  const items = await apiRequest<InventoryItem[]>("/inventory/storage-states");
   return filterSupportedInventory(items);
 }
 
@@ -24,7 +24,7 @@ export async function patchInventoryItem(
   itemId: number,
   patch: InventoryPatch,
 ): Promise<InventoryItem> {
-  return apiRequest<InventoryItem>(`/api/inventory/${itemId}`, {
+  return apiRequest<InventoryItem>(`/inventory/${itemId}`, {
     method: "PATCH",
     body: patch,
   });
@@ -34,7 +34,7 @@ export async function confirmInventoryChange(
   itemId: number,
   payload: ConfirmChangeRequest,
 ): Promise<InventoryItem> {
-  return apiRequest<InventoryItem>(`/api/inventory/${itemId}/confirm-change`, {
+  return apiRequest<InventoryItem>(`/inventory/${itemId}/confirm-change`, {
     method: "POST",
     body: payload,
   });

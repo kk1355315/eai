@@ -15,6 +15,7 @@ export class ApiError extends Error {
 }
 
 const API_PREFIX = "/api";
+const API_BASE_URL = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL);
 
 export async function apiRequest<T>(
   path: string,
@@ -49,10 +50,7 @@ function buildApiUrl(
   path: string,
   query?: ApiRequestOptions["query"],
 ): string {
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  const apiPath = normalizedPath.startsWith(API_PREFIX)
-    ? normalizedPath
-    : `${API_PREFIX}${normalizedPath}`;
+  const apiPath = normalizeApiPath(path);
   const params = new URLSearchParams();
 
   for (const [key, value] of Object.entries(query ?? {})) {
@@ -62,7 +60,30 @@ function buildApiUrl(
   }
 
   const queryString = params.toString();
-  return queryString ? `${apiPath}?${queryString}` : apiPath;
+  const relativeUrl = queryString ? `${apiPath}?${queryString}` : apiPath;
+  return API_BASE_URL ? `${API_BASE_URL}${relativeUrl}` : relativeUrl;
+}
+
+function normalizeApiPath(path: string): string {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return normalizedPath.startsWith(API_PREFIX)
+    ? normalizedPath
+    : `${API_PREFIX}${normalizedPath}`;
+}
+
+function normalizeBaseUrl(value: string | undefined): string {
+  if (!value) {
+    return "";
+  }
+
+  const trimmed = value.trim().replace(/\/+$/, "");
+  if (!trimmed) {
+    return "";
+  }
+
+  return trimmed.endsWith(API_PREFIX)
+    ? trimmed.slice(0, -API_PREFIX.length)
+    : trimmed;
 }
 
 function readErrorMessage(payload: unknown, status: number): string {

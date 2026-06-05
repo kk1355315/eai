@@ -333,7 +333,7 @@ def _recognition_payload(
     detections: list[dict] | None = None,
     camera_id: str = "cam-kitchen",
 ) -> dict:
-    captured_at = captured_at or datetime(2026, 5, 31, 8, 0, tzinfo=timezone.utc)
+    captured_at = captured_at or datetime.now(timezone.utc)
     if detections is None:
         detections = []
         for class_name, count in (counts or {"banana": 2, "apple": 1}).items():

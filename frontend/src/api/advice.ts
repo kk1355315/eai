@@ -16,12 +16,12 @@ export const todayAdviceQueryKey = ["advice", "today"] as const;
 export const shoppingAdviceQueryKey = ["advice", "shopping"] as const;
 
 export async function fetchTodayAdvice(): Promise<TodayAdviceResponse> {
-  const advice = await apiRequest<TodayAdviceResponse>("/api/advice/today");
+  const advice = await apiRequest<TodayAdviceResponse>("/advice/today");
   return filterSupportedTodayAdvice(advice);
 }
 
 export async function fetchShoppingAdvice(): Promise<ShoppingAdviceResponse> {
-  const advice = await apiRequest<ShoppingAdviceResponse>("/api/advice/shopping");
+  const advice = await apiRequest<ShoppingAdviceResponse>("/advice/shopping");
   return {
     ...advice,
     recommendations: filterSupportedAdviceItems(advice.recommendations),
@@ -31,7 +31,7 @@ export async function fetchShoppingAdvice(): Promise<ShoppingAdviceResponse> {
 export async function generateLlmAdvice(
   payload: LlmGenerateRequest,
 ): Promise<LlmAdviceResponse> {
-  const advice = await apiRequest<LlmAdviceResponse>("/api/advice/llm", {
+  const advice = await apiRequest<LlmAdviceResponse>("/advice/llm/generate", {
     method: "POST",
     body: payload,
   });
@@ -47,7 +47,7 @@ export async function generateLlmAdvice(
 export async function searchAdviceEvidence(
   query: string,
 ): Promise<EvidenceSearchResponse> {
-  return apiRequest<EvidenceSearchResponse>("/api/advice/evidence-search", {
+  return apiRequest<EvidenceSearchResponse>("/advice/evidence-search", {
     query: { query },
   });
 }

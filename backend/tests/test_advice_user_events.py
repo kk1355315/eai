@@ -1284,7 +1284,7 @@ def _recognition_payload(
     counts: dict[str, int] | None = None,
     camera_id: str = "cam-kitchen",
 ) -> dict:
-    captured_at = captured_at or datetime(2026, 5, 31, 8, 0, tzinfo=timezone.utc)
+    captured_at = captured_at or datetime.now(timezone.utc)
     detections = []
     for class_name, count in (counts or {"banana": 1}).items():
         for index in range(count):

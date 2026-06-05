@@ -150,7 +150,7 @@ describe("advice api", () => {
     });
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("/api/advice/llm");
+    expect(url).toBe("/api/advice/llm/generate");
     expect(init.method).toBe("POST");
     expect(init.body).toBe(
       JSON.stringify({ question: "What should I eat?", enable_thinking: false }),

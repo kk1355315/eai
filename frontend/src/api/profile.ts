@@ -6,7 +6,7 @@ import { filterSupportedFoodLabels } from "../lib/foods";
 export const profileQueryKey = ["profile"] as const;
 
 export async function fetchProfile(): Promise<Profile> {
-  const profile = await apiRequest<Profile>("/api/profile");
+  const profile = await apiRequest<Profile>("/profile");
   return {
     ...profile,
     avoid_foods: filterSupportedFoodLabels(profile.avoid_foods),
@@ -14,7 +14,7 @@ export async function fetchProfile(): Promise<Profile> {
 }
 
 export async function patchProfile(patch: ProfilePatch): Promise<Profile> {
-  return apiRequest<Profile>("/api/profile", {
+  return apiRequest<Profile>("/profile", {
     method: "PATCH",
     body: {
       ...patch,

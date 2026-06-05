@@ -7,7 +7,7 @@ export const habitsQueryKey = ["habits"] as const;
 export async function createUserFoodEvent(
   payload: UserFoodEventCreate,
 ): Promise<UserFoodEvent> {
-  return apiRequest<UserFoodEvent>("/api/user-food-events", {
+  return apiRequest<UserFoodEvent>("/user-food-events", {
     method: "POST",
     body: {
       quantity: 1,
@@ -18,7 +18,7 @@ export async function createUserFoodEvent(
 }
 
 export async function fetchHabits(): Promise<UserFoodHabit[]> {
-  return apiRequest<UserFoodHabit[]>("/api/habits");
+  return apiRequest<UserFoodHabit[]>("/habits");
 }
 
 export function useHabits() {

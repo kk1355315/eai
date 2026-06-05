@@ -35,19 +35,17 @@ export default function HomePage() {
   const inventoryQuery = useInventory() as QueryLike<InventoryItem[]>;
 
   const isLoading = Boolean(todayQuery.isLoading || inventoryQuery.isLoading);
-  const hasPreviewFallback = Boolean(
+  const shouldUsePreviewFallback = Boolean(
     (todayQuery.isError && !todayQuery.data) ||
       (inventoryQuery.isError && !inventoryQuery.data),
   );
   const isError = Boolean(
-    todayQuery.isError &&
-      inventoryQuery.isError &&
-      todayQuery.data &&
-      inventoryQuery.data,
+    (todayQuery.isError && todayQuery.data) ||
+      (inventoryQuery.isError && inventoryQuery.data),
   );
-  const todayAdvice = todayQuery.data ?? (hasPreviewFallback ? previewTodayAdvice : undefined);
+  const todayAdvice = todayQuery.data ?? (shouldUsePreviewFallback ? previewTodayAdvice : undefined);
   const inventoryItems =
-    inventoryQuery.data ?? (hasPreviewFallback ? previewInventoryItems : undefined);
+    inventoryQuery.data ?? (shouldUsePreviewFallback ? previewInventoryItems : undefined);
   const data = useMemo(
     () => buildHomeFruitData(todayAdvice, inventoryItems),
     [todayAdvice, inventoryItems],
@@ -82,7 +80,7 @@ export default function HomePage() {
           <PriorityList items={data.priority} />
           <NeedCheckList items={expiringSoonItems} />
           <AskAiCard />
-          <PendingConfirmNotice count={Math.max(pendingCount, 2)} />
+          <PendingConfirmNotice count={pendingCount} />
         </>
       ) : null}
     </div>
