@@ -13,7 +13,6 @@ import {
   type InventoryPatch,
   type UserFoodEvent,
 } from "../components/inventory/InventoryPanel";
-import { previewInventoryItems } from "../lib/previewData";
 
 export default function InventoryPage() {
   const inventoryQuery = useInventory();
@@ -21,14 +20,9 @@ export default function InventoryPage() {
   const confirmChange = useConfirmInventoryChange();
   const createEvent = useCreateUserFoodEvent();
   const [busyItemId, setBusyItemId] = useState<number | null>(null);
-  const isPreviewMode = Boolean(inventoryQuery.isError && !inventoryQuery.data);
-  const inventoryItems = inventoryQuery.data ?? (isPreviewMode ? previewInventoryItems : []);
+  const inventoryItems = inventoryQuery.data ?? [];
 
   async function handlePatchInventory(itemId: number, patch: InventoryPatch) {
-    if (isPreviewMode) {
-      return;
-    }
-
     setBusyItemId(itemId);
     try {
       await patchInventory.mutateAsync({ itemId, patch });
@@ -38,10 +32,6 @@ export default function InventoryPage() {
   }
 
   async function handleConfirmChange(itemId: number, payload: ConfirmInventoryChange) {
-    if (isPreviewMode) {
-      return;
-    }
-
     setBusyItemId(itemId);
     try {
       await confirmChange.mutateAsync({ itemId, payload });
@@ -51,10 +41,6 @@ export default function InventoryPage() {
   }
 
   async function handleCreateEvent(payload: UserFoodEvent) {
-    if (isPreviewMode) {
-      return;
-    }
-
     setBusyItemId(payload.inventory_id ?? null);
     try {
       await createEvent.mutateAsync(payload);
@@ -63,17 +49,14 @@ export default function InventoryPage() {
     }
   }
 
-  const error = isPreviewMode
-    ? null
-    :
-    inventoryQuery.error instanceof Error ? inventoryQuery.error.message : null;
+  const error = inventoryQuery.error instanceof Error ? inventoryQuery.error.message : null;
 
   return (
     <InventoryPanel
       busyItemId={busyItemId}
       error={error}
       items={inventoryItems.map(toPanelItem)}
-      loading={inventoryQuery.isLoading && !isPreviewMode}
+      loading={inventoryQuery.isLoading}
       onConfirmChange={handleConfirmChange}
       onCreateUserFoodEvent={handleCreateEvent}
       onPatchInventory={handlePatchInventory}

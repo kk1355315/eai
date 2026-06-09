@@ -1,6 +1,7 @@
 import { ChevronRight, Package } from "lucide-react";
 import { useLanguage } from "../../lib/language";
 import { FRUIT_IMAGE_SRC } from "../../lib/fruitAssets";
+import { getFoodDisplayName, isSupportedFoodLabel } from "../../lib/foods";
 import "./inventory.css";
 
 export type FoodLabel = "apple" | "banana" | "litchi" | "pear";
@@ -84,6 +85,7 @@ type InventoryPanelProps = {
 };
 
 type InventoryRow = {
+  id: number;
   name: string;
   count: string;
   status: "fresh" | "expiring" | "low";
@@ -93,17 +95,8 @@ type InventoryRow = {
   className?: string;
 };
 
-const TARGET_ROWS: InventoryRow[] = [
-  { name: "Vegetables", count: "12 items", status: "fresh", progress: 54, glyph: "🥦", className: "vegetable" },
-  { name: "Fruits", count: "8 items", status: "fresh", progress: 50, image: FRUIT_IMAGE_SRC.apple },
-  { name: "Dairy", count: "6 items", status: "expiring", progress: 50, glyph: "🥛", className: "dairy" },
-  { name: "Meat", count: "5 items", status: "expiring", progress: 50, glyph: "🥩", className: "meat" },
-  { name: "Seafood", count: "4 items", status: "low", progress: 13, glyph: "🍣", className: "seafood" },
-  { name: "Eggs", count: "12 items", status: "fresh", progress: 37, glyph: "🥚", className: "eggs" },
-  { name: "Drinks", count: "6 items", status: "fresh", progress: 37, glyph: "💧", className: "drinks" },
-];
-
 export function InventoryPanel({
+  items,
   loading,
   error,
   onRetry,
@@ -118,17 +111,30 @@ export function InventoryPanel({
     return <StateCard title={t("inventoryIsOffline")} copy={error} onRetry={onRetry} />;
   }
 
+  const visibleItems = items.filter((item) => item.status !== "consumed" && item.status !== "discarded");
+  const rows = visibleItems.map(toInventoryRow);
+  const totalQuantity = visibleItems.reduce((total, item) => total + item.confirmed_quantity, 0);
+  const freshCount = visibleItems.filter((item) => item.storage_state === "fresh").length;
+  const expiringCount = visibleItems.filter((item) =>
+    item.storage_state === "eat_soon" ||
+    item.storage_state === "check_required" ||
+    item.storage_state === "not_recommended",
+  ).length;
+
   return (
     <>
       <section className="inventory-summary-card" aria-label={t("inventorySummary")}>
-        <SummaryStat label="Total" value={63} />
-        <SummaryStat label="Fresh" tone="fresh" value={48} />
-        <SummaryStat label="Expiring" tone="expiring" value={7} />
+        <SummaryStat label="Total" value={totalQuantity} />
+        <SummaryStat label="Fresh" tone="fresh" value={freshCount} />
+        <SummaryStat label="Expiring" tone="expiring" value={expiringCount} />
       </section>
 
       <section className="inventory-list" aria-label={t("inventory")}>
-        {TARGET_ROWS.map((item) => (
-          <InventoryCategoryRow item={item} key={item.name} />
+        {rows.length === 0 ? (
+          <StateCard title={t("noFruitBatches")} copy={t("noFruitBatchesCopy")} />
+        ) : null}
+        {rows.map((item) => (
+          <InventoryCategoryRow item={item} key={item.id} />
         ))}
       </section>
     </>
@@ -205,4 +211,48 @@ function formatState(status: InventoryRow["status"]) {
   if (status === "fresh") return "Fresh";
   if (status === "expiring") return "Expiring";
   return "Low";
+}
+
+function toInventoryRow(item: InventoryItem): InventoryRow {
+  const food = item.food.model_label;
+  const isKnownFruit = isSupportedFoodLabel(food);
+  const quantityLabel = `${item.confirmed_quantity} ${item.unit || "items"}`;
+
+  return {
+    id: item.id,
+    name: getFoodDisplayName(food, item.food.display_name),
+    count: item.pending_change_type === "none"
+      ? quantityLabel
+      : `${quantityLabel} · ${formatPendingChange(item.pending_change_type)}`,
+    status: rowStatus(item),
+    progress: rowProgress(item),
+    image: isKnownFruit ? FRUIT_IMAGE_SRC[food] : undefined,
+    glyph: isKnownFruit ? undefined : "•",
+    className: isKnownFruit ? food : undefined,
+  };
+}
+
+function rowStatus(item: InventoryItem): InventoryRow["status"] {
+  if (item.status === "pending_confirm" || item.storage_state === "check_required") {
+    return "low";
+  }
+  if (item.storage_state === "eat_soon" || item.storage_state === "not_recommended") {
+    return "expiring";
+  }
+  return "fresh";
+}
+
+function rowProgress(item: InventoryItem): number {
+  if (item.remaining_days == null || item.safe_days == null || item.safe_days <= 0) {
+    return rowStatus(item) === "fresh" ? 72 : 18;
+  }
+
+  return Math.max(8, Math.min(100, Math.round((item.remaining_days / item.safe_days) * 100)));
+}
+
+function formatPendingChange(change: PendingChangeType) {
+  if (change === "new_quantity") return "new quantity";
+  if (change === "possible_added") return "possible added";
+  if (change === "possible_consumed") return "possible used";
+  return "confirmed";
 }

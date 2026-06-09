@@ -11,7 +11,6 @@ import { PriorityList } from "../components/home/PriorityList";
 import { RecommendedFruitCard } from "../components/home/RecommendedFruitCard";
 import type { InventoryItem, TodayAdviceResponse } from "../api/types";
 import { buildHomeFruitData, countPendingInventoryChanges } from "../lib/mappers";
-import { previewInventoryItems, previewTodayAdvice } from "../lib/previewData";
 import { useLanguage } from "../lib/language";
 
 type QueryLike<T> = {
@@ -35,17 +34,9 @@ export default function HomePage() {
   const inventoryQuery = useInventory() as QueryLike<InventoryItem[]>;
 
   const isLoading = Boolean(todayQuery.isLoading || inventoryQuery.isLoading);
-  const shouldUsePreviewFallback = Boolean(
-    (todayQuery.isError && !todayQuery.data) ||
-      (inventoryQuery.isError && !inventoryQuery.data),
-  );
-  const isError = Boolean(
-    (todayQuery.isError && todayQuery.data) ||
-      (inventoryQuery.isError && inventoryQuery.data),
-  );
-  const todayAdvice = todayQuery.data ?? (shouldUsePreviewFallback ? previewTodayAdvice : undefined);
-  const inventoryItems =
-    inventoryQuery.data ?? (shouldUsePreviewFallback ? previewInventoryItems : undefined);
+  const isError = Boolean(todayQuery.isError || inventoryQuery.isError);
+  const todayAdvice = todayQuery.data;
+  const inventoryItems = inventoryQuery.data;
   const data = useMemo(
     () => buildHomeFruitData(todayAdvice, inventoryItems),
     [todayAdvice, inventoryItems],

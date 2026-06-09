@@ -8,7 +8,6 @@ import { LoadingCard } from "../components/ui/LoadingCard";
 import { AdviceCard, type AdviceItem as CardAdviceItem } from "../components/advice/AdviceCard";
 import { AskAiPanel, type AskAiRequest, type AskAiResult } from "../components/advice/AskAiPanel";
 import { mapAdviceResponseLike, type AdviceViewModel } from "../lib/mappers";
-import { previewShoppingAdvice } from "../lib/previewData";
 import { useLanguage } from "../lib/language";
 
 type QueryLike<T> = {
@@ -116,8 +115,7 @@ export default function AdvicePage() {
   const shoppingQuery = useShoppingAdvice() as QueryLike<unknown>;
   const askMutation = useGenerateLlmAdvice() as MutationLike<AskAiRequest, unknown>;
   const [askResult, setAskResult] = useState<AskAiResult | null>(null);
-  const shoppingData =
-    shoppingQuery.data ?? (shoppingQuery.isError ? previewShoppingAdvice : undefined);
+  const shoppingData = shoppingQuery.data;
 
   const shoppingItems = useMemo(() => normalizeAdviceCards(shoppingData), [shoppingData]);
   const isAskPending = Boolean(askMutation.isPending || askMutation.isLoading);
@@ -160,16 +158,16 @@ export default function AdvicePage() {
         </div>
         <div style={styles.cards}>
           {shoppingQuery.isLoading ? <LoadingCard /> : null}
-          {shoppingQuery.isError && shoppingQuery.data ? (
+          {shoppingQuery.isError ? (
             <ErrorCard onRetry={() => shoppingQuery.refetch?.()} />
           ) : null}
-          {!shoppingQuery.isLoading && shoppingItems.length === 0 ? (
+          {!shoppingQuery.isLoading && !shoppingQuery.isError && shoppingItems.length === 0 ? (
             <EmptyCard
               title={t("noShoppingAdvice")}
               description={t("noShoppingAdviceCopy")}
             />
           ) : null}
-          {!shoppingQuery.isLoading
+          {!shoppingQuery.isLoading && !shoppingQuery.isError
             ? shoppingItems.map((item, index) => (
                 <AdviceCard key={item.id ?? `${item.title ?? "shopping"}-${index}`} item={item} tone="shopping" />
               ))

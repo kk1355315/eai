@@ -43,16 +43,16 @@ describe("InventoryPanel", () => {
     renderInventory([inventoryItem()]);
 
     const summary = screen.getByLabelText("Inventory summary");
-    expect(within(summary).getByText("63")).toBeTruthy();
-    expect(within(summary).getByText("48")).toBeTruthy();
-    expect(within(summary).getByText("7")).toBeTruthy();
+    expect(within(summary).getByText("2")).toBeTruthy();
+    expect(within(summary).getByText("1")).toBeTruthy();
+    expect(within(summary).getByText("0")).toBeTruthy();
     expect(within(summary).getByText("Fresh")).toBeTruthy();
     expect(within(summary).getByText("Expiring")).toBeTruthy();
 
     const list = screen.getByLabelText("Inventory");
-    for (const name of ["Vegetables", "Fruits", "Dairy", "Meat", "Seafood", "Eggs", "Drinks"]) {
-      expect(within(list).getByText(name)).toBeTruthy();
-    }
+    expect(within(list).getByText("苹果")).toBeTruthy();
+    expect(within(list).getByText("2 piece")).toBeTruthy();
+    expect(within(list).queryByText("Vegetables")).toBeNull();
   });
 
   it("does not render row editing controls or quick action buttons", () => {

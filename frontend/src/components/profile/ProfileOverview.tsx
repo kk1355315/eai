@@ -77,13 +77,13 @@ function buildRows(
   return [
     {
       icon: UsersRound,
-      title: t("household"),
-      tags: [language === "zh" ? "3 人" : "3 people"],
+      title: t("simplePrep"),
+      tags: tagsFromText(profile.cooking_condition, language === "zh" ? "未设置" : "Not set"),
     },
     {
       icon: Leaf,
       title: t("dietPreferences"),
-      tags: [t("lightMeals"), t("lowSugar")],
+      tags: tagsFromText(profile.diet_preference, language === "zh" ? "未设置" : "Not set"),
     },
     {
       icon: ShieldPlus,
@@ -93,14 +93,30 @@ function buildRows(
     {
       icon: HeartPulse,
       title: t("healthGoals"),
-      tags: [t("fresh"), t("weightManagement")],
+      tags: tagsFromText(
+        [profile.goal, profile.health_notes_optional].filter(Boolean).join(","),
+        language === "zh" ? "未设置" : "Not set",
+      ),
     },
     {
       icon: Bell,
-      title: t("reminders"),
-      tags: [t("everyTwoDays")],
+      title: t("avoid"),
+      tags: profile.avoid_foods.length
+        ? profile.avoid_foods.map((food) => tFoodName(food, language))
+        : [t("none")],
     },
   ];
+}
+
+function tFoodName(food: string, language: "en" | "zh") {
+  const names: Record<string, Record<"en" | "zh", string>> = {
+    apple: { en: "Apple", zh: "苹果" },
+    banana: { en: "Banana", zh: "香蕉" },
+    litchi: { en: "Litchi", zh: "荔枝" },
+    pear: { en: "Pear", zh: "梨" },
+  };
+
+  return names[food]?.[language] ?? food;
 }
 
 function tagsFromText(value: string | null | undefined, fallback: string) {

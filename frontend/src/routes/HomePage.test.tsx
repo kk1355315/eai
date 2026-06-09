@@ -26,6 +26,16 @@ function queryResult(data: unknown) {
   } as never;
 }
 
+function errorResult() {
+  return {
+    data: undefined,
+    error: new Error("backend offline"),
+    isError: true,
+    isLoading: false,
+    refetch: vi.fn(),
+  } as never;
+}
+
 describe("HomePage", () => {
   beforeEach(() => {
     mockUseTodayAdvice.mockReturnValue(
@@ -118,5 +128,16 @@ describe("HomePage", () => {
     expect(within(priority as HTMLElement).getByText("Banana")).toBeTruthy();
     expect(within(priority as HTMLElement).queryByText("Pear")).toBeNull();
     expect(within(needCheck as HTMLElement).getByText("Pear")).toBeTruthy();
+  });
+
+  it("shows an error instead of static preview fruit when API calls fail", () => {
+    mockUseTodayAdvice.mockReturnValue(errorResult());
+    mockUseInventory.mockReturnValue(errorResult());
+
+    renderWithProviders(<HomePage />);
+
+    expect(screen.getByRole("alert")).toBeTruthy();
+    expect(screen.queryByText("Banana")).toBeNull();
+    expect(screen.queryByText("Apple")).toBeNull();
   });
 });
