@@ -65,7 +65,7 @@ describe("inventory api", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(fetchInventory()).resolves.toEqual([items[0]]);
-    expect(fetchMock.mock.calls[0][0]).toBe("/api/inventory");
+    expect(fetchMock.mock.calls[0][0]).toBe("http://eai.744477.xyz/api/inventory");
   });
 
   it("fetches storage states and filters unsupported foods", async () => {
@@ -80,7 +80,9 @@ describe("inventory api", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(fetchStorageStates()).resolves.toEqual([items[0]]);
-    expect(fetchMock.mock.calls[0][0]).toBe("/api/inventory/storage-states");
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      "http://eai.744477.xyz/api/inventory/storage-states",
+    );
   });
 
   it("patches inventory item with body", async () => {
@@ -93,7 +95,7 @@ describe("inventory api", () => {
     });
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("/api/inventory/42");
+    expect(url).toBe("http://eai.744477.xyz/api/inventory/42");
     expect(init.method).toBe("PATCH");
     expect(init.body).toBe(
       JSON.stringify({
@@ -114,7 +116,7 @@ describe("inventory api", () => {
     });
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("/api/inventory/42/confirm-change");
+    expect(url).toBe("http://eai.744477.xyz/api/inventory/42/confirm-change");
     expect(init.method).toBe("POST");
     expect(init.body).toBe(
       JSON.stringify({

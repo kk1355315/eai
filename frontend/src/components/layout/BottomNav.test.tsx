@@ -15,18 +15,19 @@ function BottomNavHarness() {
 }
 
 describe("BottomNav", () => {
-  it("renders the three MVP tabs without Advice", () => {
+  it("renders the four MVP tabs", () => {
     renderWithProviders(<BottomNavHarness />);
 
     const nav = screen.getByRole("navigation", { name: /primary/i });
     const links = within(nav).getAllByRole("link");
 
-    expect(links).toHaveLength(3);
+    expect(links).toHaveLength(4);
     expect(links.map((link) => link.textContent)).toEqual([
       "Home",
       "Inventory",
+      "Advice",
       "Profile",
     ]);
-    expect(within(nav).queryByRole("link", { name: /advice/i })).toBeNull();
+    expect(within(nav).getByRole("link", { name: /advice/i })).toBeTruthy();
   });
 });

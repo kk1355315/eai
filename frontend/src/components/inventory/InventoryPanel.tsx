@@ -1,4 +1,5 @@
-import { ChevronRight, Package } from "lucide-react";
+import { type ChangeEvent, useState } from "react";
+import { Check, Package } from "lucide-react";
 import { useLanguage } from "../../lib/language";
 import { FRUIT_IMAGE_SRC } from "../../lib/fruitAssets";
 import { getFoodDisplayName, isSupportedFoodLabel } from "../../lib/foods";
@@ -39,8 +40,12 @@ export type InventoryItem = {
   detected_quantity?: number;
   unit: string;
   storage_location: "pantry" | "refrigerate" | "freeze" | string;
+  days_stored: number | null;
   remaining_days: number | null;
   safe_days: number | null;
+  eat_priority_rank: number | null;
+  last_seen_at: string | null;
+  created_at: string | null;
   storage_state: StorageState;
   pending_change_type: PendingChangeType;
   pending_detected_quantity?: number | null;
@@ -100,8 +105,11 @@ export function InventoryPanel({
   loading,
   error,
   onRetry,
+  busyItemId,
+  onConfirmChange,
 }: InventoryPanelProps) {
   const { t } = useLanguage();
+  const [quantityDrafts, setQuantityDrafts] = useState<Record<number, string>>({});
 
   if (loading) {
     return <StateCard title={t("loadingInventory")} copy={t("checkingLatestFruitBatches")} />;
@@ -134,7 +142,33 @@ export function InventoryPanel({
           <StateCard title={t("noFruitBatches")} copy={t("noFruitBatchesCopy")} />
         ) : null}
         {rows.map((item) => (
-          <InventoryCategoryRow item={item} key={item.id} />
+          <InventoryCategoryRow
+            busy={busyItemId === item.id}
+            item={item}
+            key={item.id}
+            quantityDraft={quantityDrafts[item.id]}
+            source={visibleItems.find((sourceItem) => sourceItem.id === item.id)}
+            onDraftChange={(event) =>
+              setQuantityDrafts((current) => ({
+                ...current,
+                [item.id]: event.target.value,
+              }))
+            }
+            onConfirm={() => {
+              const rawQuantity = quantityDrafts[item.id];
+              const newQuantity =
+                rawQuantity === undefined || rawQuantity.trim() === ""
+                  ? visibleItems.find((sourceItem) => sourceItem.id === item.id)
+                      ?.confirmed_quantity
+                  : Number(rawQuantity);
+
+              void onConfirmChange(item.id, {
+                new_quantity: Number.isFinite(newQuantity) ? newQuantity : undefined,
+                status: "available",
+                as_new_batch: false,
+              });
+            }}
+          />
         ))}
       </section>
     </>
@@ -158,7 +192,21 @@ function SummaryStat({
   );
 }
 
-function InventoryCategoryRow({ item }: { item: InventoryRow }) {
+function InventoryCategoryRow({
+  busy,
+  item,
+  onConfirm,
+  onDraftChange,
+  quantityDraft,
+  source,
+}: {
+  busy: boolean;
+  item: InventoryRow;
+  onConfirm: () => void;
+  onDraftChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  quantityDraft?: string;
+  source?: InventoryItem;
+}) {
   return (
     <article className="inventory-row">
       <div className={`inventory-food-image ${item.className ?? ""}`} aria-hidden="true">
@@ -167,6 +215,22 @@ function InventoryCategoryRow({ item }: { item: InventoryRow }) {
       <div className="inventory-row-copy">
         <h2 className="inventory-food-title">{item.name}</h2>
         <p className="inventory-food-meta">{item.count}</p>
+        {source ? (
+          <dl className="inventory-detail-grid">
+            <Detail label="food_id" value={source.food.id} />
+            <Detail label="food_name" value={source.food.display_name} />
+            <Detail label="confirmed_quantity" value={source.confirmed_quantity} />
+            <Detail label="detected_quantity" value={source.detected_quantity ?? "-"} />
+            <Detail label="status" value={source.status} />
+            <Detail label="storage_state" value={source.storage_state ?? "-"} />
+            <Detail label="days_stored" value={source.days_stored ?? "-"} />
+            <Detail label="safe_days" value={source.safe_days ?? "-"} />
+            <Detail label="remaining_days" value={source.remaining_days ?? "-"} />
+            <Detail label="eat_priority_rank" value={source.eat_priority_rank ?? "-"} />
+            <Detail label="last_seen_at" value={formatDateTime(source.last_seen_at)} />
+            <Detail label="created_at" value={formatDateTime(source.created_at)} />
+          </dl>
+        ) : null}
       </div>
       <div className="inventory-progress-track" aria-hidden="true">
         <span
@@ -177,8 +241,38 @@ function InventoryCategoryRow({ item }: { item: InventoryRow }) {
       <span className={`inventory-state-label state-text-${item.status}`}>
         {formatState(item.status)}
       </span>
-      <ChevronRight className="inventory-chevron" size={30} strokeWidth={2.4} />
+      <div className="inventory-confirm-controls">
+        <label>
+          <span className="sr-only">New quantity</span>
+          <input
+            min={0}
+            type="number"
+            value={quantityDraft ?? ""}
+            placeholder={String(source?.confirmed_quantity ?? "")}
+            onChange={onDraftChange}
+          />
+        </label>
+        <button disabled={busy} type="button" onClick={onConfirm}>
+          <Check size={17} strokeWidth={2.4} aria-hidden="true" />
+          <span>{busy ? "确认中" : "确认"}</span>
+        </button>
+      </div>
     </article>
+  );
+}
+
+function Detail({
+  label,
+  value,
+}: {
+  label: string;
+  value: number | string;
+}) {
+  return (
+    <div>
+      <dt>{label}</dt>
+      <dd>{value}</dd>
+    </div>
   );
 }
 
@@ -209,8 +303,8 @@ function StateCard({
 
 function formatState(status: InventoryRow["status"]) {
   if (status === "fresh") return "Fresh";
-  if (status === "expiring") return "Expiring";
-  return "Low";
+  if (status === "expiring") return "Eat soon";
+  return "Check";
 }
 
 function toInventoryRow(item: InventoryItem): InventoryRow {
@@ -255,4 +349,12 @@ function formatPendingChange(change: PendingChangeType) {
   if (change === "possible_added") return "possible added";
   if (change === "possible_consumed") return "possible used";
   return "confirmed";
+}
+
+function formatDateTime(value: string | null | undefined): string {
+  if (!value) {
+    return "-";
+  }
+
+  return value.replace("T", " ").replace(/\.\d+/, "").replace(/Z$/, "");
 }

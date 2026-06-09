@@ -66,10 +66,12 @@
 
 .inventory-row {
   display: grid;
-  grid-template-columns: 132px 211px 155px 116px 27px;
+  grid-template-columns: 78px minmax(0, 1fr) 92px 72px 100px;
   align-items: center;
-  min-height: 155px;
+  min-height: 190px;
+  gap: 14px;
   border-top: 1px solid #e6ecf4;
+  padding: 24px 0;
 }
 
 .inventory-row:first-child {
@@ -124,15 +126,48 @@
 }
 
 .inventory-food-meta {
-  margin: 22px 0 0;
+  margin: 10px 0 0;
   color: #7d889d;
-  font-size: 30px;
+  font-size: 20px;
   font-weight: 420;
   line-height: 28px;
 }
 
+.inventory-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  margin: 14px 0 0;
+}
+
+.inventory-detail-grid div {
+  min-width: 0;
+}
+
+.inventory-detail-grid dt {
+  overflow: hidden;
+  margin: 0 0 3px;
+  color: #8a98b3;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inventory-detail-grid dd {
+  overflow: hidden;
+  margin: 0;
+  color: #293750;
+  font-size: 13px;
+  font-weight: 680;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .inventory-progress-track {
-  width: 154px;
+  width: 92px;
   height: 12px;
   overflow: hidden;
   border-radius: 6px;
@@ -159,9 +194,9 @@
 
 .inventory-state-label {
   justify-self: start;
-  font-size: 30px;
+  font-size: 18px;
   font-weight: 430;
-  line-height: 36px;
+  line-height: 24px;
   white-space: nowrap;
 }
 
@@ -177,9 +212,50 @@
   color: #ed3835;
 }
 
-.inventory-chevron {
-  justify-self: end;
-  color: #7b88a0;
+.inventory-confirm-controls {
+  display: grid;
+  gap: 9px;
+  justify-items: stretch;
+}
+
+.inventory-confirm-controls input {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid rgba(143, 164, 194, 0.28);
+  border-radius: 10px;
+  padding: 0 11px;
+  color: #0c192a;
+  background: rgba(255, 255, 255, 0.76);
+  font-size: 15px;
+  outline: 0;
+}
+
+.inventory-confirm-controls button {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 10px;
+  color: #ffffff;
+  background: #2584ff;
+  font-size: 15px;
+  font-weight: 760;
+  cursor: pointer;
+}
+
+.inventory-confirm-controls button:disabled {
+  cursor: default;
+  opacity: 0.64;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }
 
 .inventory-state-card {
@@ -250,10 +326,11 @@
   }
 
   .inventory-row {
-    grid-template-columns: 72px minmax(0, 1fr) auto;
+    grid-template-columns: 72px minmax(0, 1fr);
     grid-template-areas:
-      "image copy chevron"
-      "image progress state";
+      "image copy"
+      "image progress state"
+      "image confirm confirm";
     gap: 8px 14px;
     min-height: 118px;
     padding: 18px 0;
@@ -292,6 +369,12 @@
     line-height: 22px;
   }
 
+  .inventory-detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px 10px;
+    margin-top: 12px;
+  }
+
   .inventory-progress-track {
     grid-area: progress;
     width: min(100%, 154px);
@@ -303,7 +386,9 @@
     line-height: 22px;
   }
 
-  .inventory-chevron {
-    grid-area: chevron;
+  .inventory-confirm-controls {
+    grid-area: confirm;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
   }
 }

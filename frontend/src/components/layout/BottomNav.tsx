@@ -1,4 +1,4 @@
-import { Home, Package, User } from "lucide-react";
+import { Home, Lightbulb, Package, User } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useLanguage } from "../../lib/language";
 import styles from "./BottomNav.module.css";
@@ -6,6 +6,7 @@ import styles from "./BottomNav.module.css";
 const navItems = [
   { to: "/", label: "home", icon: Home, end: true },
   { to: "/inventory", label: "inventory", icon: Package },
+  { to: "/advice", label: "advice", icon: Lightbulb },
   { to: "/profile", label: "profile", icon: User },
 ] as const;
 

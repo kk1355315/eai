@@ -51,6 +51,7 @@ export interface InventoryItem {
   unit: string;
   storage_location: StorageLocation | string;
   first_seen_at: string;
+  created_at?: string | null;
   last_seen_at: string;
   days_stored: number | null;
   safe_days: number | null;

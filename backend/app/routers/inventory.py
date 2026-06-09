@@ -45,6 +45,7 @@ class InventoryResponse(BaseModel):
     storage_location: str
     first_seen_at: datetime
     last_seen_at: datetime
+    created_at: datetime
     days_stored: int | None
     safe_days: int | None
     remaining_days: int | None
@@ -472,6 +473,7 @@ def _serialize_inventory(item: InventoryItem, food: FoodItem) -> InventoryRespon
         storage_location=item.storage_location,
         first_seen_at=item.first_seen_at,
         last_seen_at=item.last_seen_at,
+        created_at=item.created_at,
         days_stored=item.days_stored,
         safe_days=item.safe_days,
         remaining_days=item.remaining_days,

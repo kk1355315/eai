@@ -4,7 +4,7 @@
   bottom: var(--bottom-nav-offset, max(24px, env(safe-area-inset-bottom)));
   z-index: 20;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0;
   width: min(calc(100vw - 32px), 809px);
   height: var(--bottom-nav-height, 120px);
@@ -24,7 +24,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  width: min(220px, 100%);
+  width: min(180px, 100%);
   min-height: calc(var(--bottom-nav-height, 120px) - 20px);
   align-items: center;
   justify-content: center;

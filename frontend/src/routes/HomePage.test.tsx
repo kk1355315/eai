@@ -119,8 +119,8 @@ describe("HomePage", () => {
   it("hides non-MVP foods and keeps check_required fruit out of Priority", () => {
     renderWithProviders(<HomePage />);
 
-    const priority = screen.getByRole("heading", { name: "Priority" }).closest("section");
-    const needCheck = screen.getByRole("heading", { name: "Expiring Soon" }).closest("section");
+    const priority = screen.getByRole("heading", { name: "Today's priority" }).closest("section");
+    const needCheck = screen.getByRole("heading", { name: "Need Check" }).closest("section");
 
     expect(priority).toBeTruthy();
     expect(needCheck).toBeTruthy();

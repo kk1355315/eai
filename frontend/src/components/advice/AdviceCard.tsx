@@ -69,6 +69,26 @@ const styles = {
     fontSize: 13,
     lineHeight: 1.2,
   },
+  evidence: {
+    display: "grid",
+    gap: 8,
+    marginTop: 14,
+    paddingTop: 14,
+    borderTop: "1px solid rgba(143, 164, 194, 0.18)",
+  },
+  evidenceTitle: {
+    margin: 0,
+    color: "#07152f",
+    fontSize: 14,
+    fontWeight: 800,
+    lineHeight: 1.25,
+  },
+  evidenceText: {
+    margin: 0,
+    color: "#697895",
+    fontSize: 14,
+    lineHeight: 1.45,
+  },
 } satisfies Record<string, CSSProperties>;
 
 function confidenceCopy(confidence?: number | string | null) {
@@ -83,6 +103,11 @@ export function AdviceCard({ item, tone = "ai" }: AdviceCardProps) {
   const confidence = confidenceCopy(item.confidence);
   const actionLabel =
     item.actionLabel ?? (item.actionType ? getActionTypeLabel(item.actionType) : null);
+  const basis = Array.isArray(item.basis)
+    ? item.basis
+    : item.basis
+      ? [item.basis]
+      : [];
 
   return (
     <GlassCard style={styles.card}>
@@ -105,12 +130,23 @@ export function AdviceCard({ item, tone = "ai" }: AdviceCardProps) {
             {getFoodDisplayName(food)}
           </span>
         ))}
-        {item.evidenceIds?.length ? (
-          <span style={styles.pill}>
-            <Info size={12} strokeWidth={2.2} aria-hidden="true" /> {item.evidenceIds.length} evidence
-          </span>
-        ) : null}
       </div>
+      {basis.length || item.evidenceIds?.length ? (
+        <div style={styles.evidence}>
+          {basis.length ? (
+            <>
+              <p style={styles.evidenceTitle}>依据</p>
+              <p style={styles.evidenceText}>{basis.join("；")}</p>
+            </>
+          ) : null}
+          {item.evidenceIds?.length ? (
+            <>
+              <p style={styles.evidenceTitle}>Evidence IDs</p>
+              <p style={styles.evidenceText}>{item.evidenceIds.join(", ")}</p>
+            </>
+          ) : null}
+        </div>
+      ) : null}
     </GlassCard>
   );
 }

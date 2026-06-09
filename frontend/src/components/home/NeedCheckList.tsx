@@ -18,7 +18,7 @@ export function NeedCheckList({ items }: NeedCheckListProps) {
           <ShieldPlus size={22} strokeWidth={2.2} />
         </span>
         <h2 className="home-section-title">
-          {language === "zh" ? "即将过期" : "Expiring Soon"}
+          {language === "zh" ? "需要检查" : "Need Check"}
         </h2>
       </div>
       {items.length === 0 ? (
@@ -31,7 +31,7 @@ export function NeedCheckList({ items }: NeedCheckListProps) {
               <div>
                 <p className="home-item-title">{foodName(item.modelLabel, item.displayName)}</p>
                 <p className="home-item-meta">
-                  {formatExpiringMeta(item.remainingDays, language)}
+                  {formatCheckMeta(item.remainingDays, language)}
                 </p>
               </div>
             </article>
@@ -42,14 +42,16 @@ export function NeedCheckList({ items }: NeedCheckListProps) {
   );
 }
 
-function formatExpiringMeta(days: number | null | undefined, language: "en" | "zh") {
+function formatCheckMeta(days: number | null | undefined, language: "en" | "zh") {
   if (language === "zh") {
-    if (days == null) return "需确认";
-    if (days <= 0) return "今天";
-    return `${days} 天`;
+    if (days == null || days <= 0) {
+      return "已超过参考保存期，请检查外观、气味和实际状态后决定。";
+    }
+    return `参考保存期还剩 ${days} 天`;
   }
 
-  if (days == null) return "Check";
-  if (days <= 0) return "Today";
-  return `${days} days`;
+  if (days == null || days <= 0) {
+    return "Past the reference storage period. Check appearance, smell, and actual condition.";
+  }
+  return `${days} days left in the reference storage period`;
 }

@@ -15,7 +15,10 @@ export class ApiError extends Error {
 }
 
 const API_PREFIX = "/api";
-const API_BASE_URL = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL);
+const DEFAULT_API_BASE_URL = "http://eai.744477.xyz/api";
+const API_BASE_URL = normalizeBaseUrl(
+  import.meta.env.VITE_API_BASE_URL ?? DEFAULT_API_BASE_URL,
+);
 
 export async function apiRequest<T>(
   path: string,
