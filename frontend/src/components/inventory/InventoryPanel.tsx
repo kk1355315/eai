@@ -35,11 +35,15 @@ export type InventoryFood = {
 
 export type InventoryItem = {
   id: number;
+  evidence_id?: string;
+  user_id?: number;
+  camera_id?: string | null;
   food: InventoryFood;
   confirmed_quantity: number;
   detected_quantity?: number;
   unit: string;
   storage_location: "pantry" | "refrigerate" | "freeze" | string;
+  first_seen_at?: string | null;
   days_stored: number | null;
   remaining_days: number | null;
   safe_days: number | null;
@@ -47,6 +51,7 @@ export type InventoryItem = {
   last_seen_at: string | null;
   created_at: string | null;
   storage_state: StorageState;
+  source_event_id?: number | null;
   pending_change_type: PendingChangeType;
   pending_detected_quantity?: number | null;
   status: InventoryStatus;
@@ -93,7 +98,7 @@ type InventoryRow = {
   id: number;
   name: string;
   count: string;
-  status: "fresh" | "expiring" | "low";
+  status: "fresh" | "expiring" | "low" | "notRecommended";
   progress: number;
   image?: string;
   glyph?: string;
@@ -156,10 +161,10 @@ export function InventoryPanel({
             }
             onConfirm={() => {
               const rawQuantity = quantityDrafts[item.id];
+              const sourceItem = visibleItems.find((source) => source.id === item.id);
               const newQuantity =
                 rawQuantity === undefined || rawQuantity.trim() === ""
-                  ? visibleItems.find((sourceItem) => sourceItem.id === item.id)
-                      ?.confirmed_quantity
+                  ? sourceItem?.pending_detected_quantity ?? sourceItem?.confirmed_quantity
                   : Number(rawQuantity);
 
               void onConfirmChange(item.id, {
@@ -216,19 +221,30 @@ function InventoryCategoryRow({
         <h2 className="inventory-food-title">{item.name}</h2>
         <p className="inventory-food-meta">{item.count}</p>
         {source ? (
-          <dl className="inventory-detail-grid">
+            <dl className="inventory-detail-grid">
+            <Detail label="id" value={source.id} />
+            <Detail label="evidence_id" value={source.evidence_id ?? "-"} />
+            <Detail label="user_id" value={source.user_id ?? "-"} />
+            <Detail label="camera_id" value={source.camera_id ?? "-"} />
             <Detail label="food_id" value={source.food.id} />
             <Detail label="food_name" value={source.food.display_name} />
             <Detail label="confirmed_quantity" value={source.confirmed_quantity} />
             <Detail label="detected_quantity" value={source.detected_quantity ?? "-"} />
+            <Detail label="unit" value={source.unit ?? "-"} />
+            <Detail label="storage_location" value={source.storage_location ?? "-"} />
             <Detail label="status" value={source.status} />
             <Detail label="storage_state" value={source.storage_state ?? "-"} />
             <Detail label="days_stored" value={source.days_stored ?? "-"} />
             <Detail label="safe_days" value={source.safe_days ?? "-"} />
             <Detail label="remaining_days" value={source.remaining_days ?? "-"} />
             <Detail label="eat_priority_rank" value={source.eat_priority_rank ?? "-"} />
+            <Detail label="first_seen_at" value={formatDateTime(source.first_seen_at)} />
             <Detail label="last_seen_at" value={formatDateTime(source.last_seen_at)} />
             <Detail label="created_at" value={formatDateTime(source.created_at)} />
+            <Detail label="source_event_id" value={source.source_event_id ?? "-"} />
+            <Detail label="pending_change_type" value={source.pending_change_type ?? "-"} />
+            <Detail label="pending_detected_quantity" value={source.pending_detected_quantity ?? "-"} />
+            <Detail label="message" value={source.message ?? "-"} />
           </dl>
         ) : null}
       </div>
@@ -248,7 +264,7 @@ function InventoryCategoryRow({
             min={0}
             type="number"
             value={quantityDraft ?? ""}
-            placeholder={String(source?.confirmed_quantity ?? "")}
+            placeholder={String(source?.pending_detected_quantity ?? source?.confirmed_quantity ?? "")}
             onChange={onDraftChange}
           />
         </label>
@@ -304,6 +320,7 @@ function StateCard({
 function formatState(status: InventoryRow["status"]) {
   if (status === "fresh") return "Fresh";
   if (status === "expiring") return "Eat soon";
+  if (status === "notRecommended") return "Check required";
   return "Check";
 }
 
@@ -330,7 +347,10 @@ function rowStatus(item: InventoryItem): InventoryRow["status"] {
   if (item.status === "pending_confirm" || item.storage_state === "check_required") {
     return "low";
   }
-  if (item.storage_state === "eat_soon" || item.storage_state === "not_recommended") {
+  if (item.storage_state === "not_recommended") {
+    return "notRecommended";
+  }
+  if (item.storage_state === "eat_soon") {
     return "expiring";
   }
   return "fresh";

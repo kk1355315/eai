@@ -45,10 +45,6 @@ export default function HomePage() {
     () => countPendingInventoryChanges(inventoryItems ?? []),
     [inventoryItems],
   );
-  const expiringSoonItems = useMemo(
-    () => [...data.priority, ...data.needCheck].slice(0, 3),
-    [data.needCheck, data.priority],
-  );
   const handleRetry = () => {
     todayQuery.refetch?.();
     inventoryQuery.refetch?.();
@@ -69,7 +65,7 @@ export default function HomePage() {
             <RecommendedFruitCard />
           )}
           <PriorityList items={data.priority} />
-          <NeedCheckList items={expiringSoonItems} />
+          <NeedCheckList items={data.needCheck} />
           <AskAiCard />
           <PendingConfirmNotice count={pendingCount} />
         </>

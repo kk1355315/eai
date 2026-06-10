@@ -127,6 +127,7 @@ describe("HomePage", () => {
     expect(screen.queryByText("Mango")).toBeNull();
     expect(within(priority as HTMLElement).getByText("Banana")).toBeTruthy();
     expect(within(priority as HTMLElement).queryByText("Pear")).toBeNull();
+    expect(within(needCheck as HTMLElement).queryByText("Banana")).toBeNull();
     expect(within(needCheck as HTMLElement).getByText("Pear")).toBeTruthy();
   });
 

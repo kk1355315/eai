@@ -121,7 +121,7 @@ export function mapInventoryItem(item: InventoryItem): InventoryViewModel | null
     eatPriorityRank: item.eat_priority_rank,
     needsConfirmation:
       item.status === "pending_confirm" || item.pending_change_type !== "none",
-    message: item.message,
+    message: item.message ?? null,
   };
 }
 
@@ -181,12 +181,7 @@ export function buildHomeFruitData(
   const priority = todayPriorityFruits.length
     ? todayPriorityFruits
     : fallbackPriority;
-  const needCheck = needCheckFromAdvice.length
-    ? needCheckFromAdvice
-    : inventory
-        .filter(isNeedsCheckInventoryItem)
-        .map(mapInventoryHomeFruit)
-        .filter((item): item is HomeFruitViewModel => item !== null);
+  const needCheck = needCheckFromAdvice;
 
   return {
     recommended: priority[0],
@@ -346,7 +341,7 @@ function mapInventoryHomeFruit(item: InventoryItem): HomeFruitViewModel | null {
     unit: item.unit,
     remainingDays: item.remaining_days,
     storageState: normalizeStorageState(item.storage_state),
-    message: item.message,
+    message: item.message ?? null,
   };
 }
 

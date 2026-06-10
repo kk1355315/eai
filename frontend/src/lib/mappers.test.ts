@@ -7,6 +7,7 @@ import type {
 import {
   filterSupportedAdviceItems,
   filterSupportedInventory,
+  buildHomeFruitData,
   filterSupportedTodayAdvice,
   mapAdviceItem,
   mapAdviceItems,
@@ -160,6 +161,21 @@ describe("mappers", () => {
       todayPriority: [{ food: "banana" }],
       checkRequired: [{ food: "litchi" }],
     });
+  });
+
+  it("does not synthesize home need-check items from inventory fallback", () => {
+    const data = buildHomeFruitData(
+      { today_priority: [], check_required: [] },
+      [
+        inventoryItem({
+          storage_state: "check_required",
+          confirmed_quantity: 1,
+          status: "available",
+        }),
+      ],
+    );
+
+    expect(data.needCheck).toEqual([]);
   });
 
   it("filters advice related foods while preserving general advice", () => {

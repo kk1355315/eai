@@ -135,11 +135,7 @@ export default function AdvicePage() {
       setAskResult({
         accepted: false,
         errors: [error instanceof Error ? error.message : "Advice request failed."],
-        advice: {
-          summary: "Use your confirmed fruit inventory as the source of truth for now.",
-          recommendations: [],
-          fallback: true,
-        },
+        advice: null,
         record_id: null,
       });
     }

@@ -68,11 +68,15 @@ export default function InventoryPage() {
 function toPanelItem(item: ApiInventoryItem): InventoryItem {
   return {
     id: item.id,
+    evidence_id: item.evidence_id,
+    user_id: item.user_id,
+    camera_id: item.camera_id,
     food: item.food,
     confirmed_quantity: item.confirmed_quantity,
     detected_quantity: item.detected_quantity,
     unit: item.unit,
     storage_location: item.storage_location,
+    first_seen_at: item.first_seen_at,
     days_stored: item.days_stored,
     remaining_days: item.remaining_days,
     safe_days: item.safe_days,
@@ -80,6 +84,7 @@ function toPanelItem(item: ApiInventoryItem): InventoryItem {
     last_seen_at: item.last_seen_at,
     created_at: item.created_at ?? item.first_seen_at,
     storage_state: normalizeStorageState(item.storage_state),
+    source_event_id: item.source_event_id,
     pending_change_type: normalizePendingChange(item.pending_change_type),
     pending_detected_quantity: item.pending_detected_quantity,
     status: normalizeInventoryStatus(item.status),

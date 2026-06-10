@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../test/test-utils";
 import { InventoryPanel, type InventoryItem } from "./InventoryPanel";
@@ -6,6 +6,9 @@ import { InventoryPanel, type InventoryItem } from "./InventoryPanel";
 function inventoryItem(overrides: Partial<InventoryItem> = {}): InventoryItem {
   return {
     id: 1,
+    evidence_id: "inventory_1",
+    user_id: 1,
+    camera_id: "camera-1",
     food: {
       id: 1,
       model_label: "apple",
@@ -15,6 +18,7 @@ function inventoryItem(overrides: Partial<InventoryItem> = {}): InventoryItem {
     detected_quantity: 2,
     unit: "piece",
     storage_location: "pantry",
+    first_seen_at: "2026-06-01T10:00:00+08:00",
     days_stored: 2,
     remaining_days: 3,
     safe_days: 5,
@@ -22,6 +26,7 @@ function inventoryItem(overrides: Partial<InventoryItem> = {}): InventoryItem {
     last_seen_at: "2026-06-04T12:00:00+08:00",
     created_at: "2026-06-01T12:00:00+08:00",
     storage_state: "fresh",
+    source_event_id: 9,
     pending_change_type: "none",
     pending_detected_quantity: null,
     status: "available",
@@ -70,21 +75,72 @@ describe("InventoryPanel", () => {
       }),
     ], { onConfirmChange });
 
-    expect(screen.getByText("food_id")).toBeTruthy();
-    expect(screen.getByText("confirmed_quantity")).toBeTruthy();
-    expect(screen.getByText("detected_quantity")).toBeTruthy();
-    expect(screen.getByText("storage_state")).toBeTruthy();
-    expect(screen.getByText("days_stored")).toBeTruthy();
-    expect(screen.getByText("safe_days")).toBeTruthy();
-    expect(screen.getByText("remaining_days")).toBeTruthy();
-    expect(screen.getByText("eat_priority_rank")).toBeTruthy();
-    expect(screen.getByText("last_seen_at")).toBeTruthy();
-    expect(screen.getByText("created_at")).toBeTruthy();
+    for (const label of [
+      "id",
+      "evidence_id",
+      "user_id",
+      "camera_id",
+      "food_id",
+      "food_name",
+      "confirmed_quantity",
+      "detected_quantity",
+      "unit",
+      "storage_location",
+      "status",
+      "storage_state",
+      "days_stored",
+      "safe_days",
+      "remaining_days",
+      "eat_priority_rank",
+      "first_seen_at",
+      "last_seen_at",
+      "created_at",
+      "source_event_id",
+      "pending_change_type",
+      "pending_detected_quantity",
+      "message",
+    ]) {
+      expect(screen.getByText(label)).toBeTruthy();
+    }
     expect(screen.getByRole("button", { name: /确认/i })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /ate/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /tossed/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /bought/i })).toBeNull();
     expect(screen.getByRole("spinbutton")).toBeTruthy();
     expect(screen.queryByRole("combobox")).toBeNull();
+  });
+
+  it("uses pending_detected_quantity as the default confirm quantity", () => {
+    const onConfirmChange = vi.fn();
+    renderInventory([
+      inventoryItem({
+        id: 11,
+        confirmed_quantity: 0,
+        pending_change_type: "new_quantity",
+        pending_detected_quantity: 1,
+        status: "pending_confirm",
+      }),
+    ], { onConfirmChange });
+
+    expect(screen.getByRole("spinbutton")).toHaveAttribute("placeholder", "1");
+    fireEvent.click(screen.getByRole("button", { name: /确认/i }));
+
+    expect(onConfirmChange).toHaveBeenCalledWith(11, {
+      new_quantity: 1,
+      status: "available",
+      as_new_batch: false,
+    });
+  });
+
+  it("does not recommend eating not_recommended inventory", () => {
+    renderInventory([
+      inventoryItem({
+        storage_state: "not_recommended",
+        remaining_days: null,
+      }),
+    ]);
+
+    expect(screen.getByText("Check required")).toBeTruthy();
+    expect(screen.queryByText("Eat soon")).toBeNull();
   });
 });

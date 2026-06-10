@@ -5,6 +5,7 @@ dist/
 frontend/tmp-chrome*/
 frontend/tmp-edge*/
 frontend/pixel-shots/
+frontend/dev-server.*.log
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -17,6 +18,8 @@ runs/
 train/
 valid/
 test/
+!frontend/src/test/
+!frontend/src/test/**
 detect_split/
 *.cache
 roboflow.zip

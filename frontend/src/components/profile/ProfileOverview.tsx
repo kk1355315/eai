@@ -33,8 +33,8 @@ export function ProfileOverview({ profile }: ProfileOverviewProps) {
           <img alt="" src="/profile-avatar.png" />
         </div>
         <div className={styles.identityCopy}>
-          <h2>{t("profileName")}</h2>
-          <p>{t("profileEmail")}</p>
+          <h2>{t("profile")}</h2>
+          <p>{profile.updated_at ? `Updated ${formatDate(profile.updated_at)}` : t("none")}</p>
         </div>
       </section>
 
@@ -128,4 +128,8 @@ function tagsFromText(value: string | null | undefined, fallback: string) {
     .split(/[,，/]/)
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function formatDate(value: string) {
+  return value.replace("T", " ").replace(/\.\d+/, "").replace(/Z$/, "");
 }

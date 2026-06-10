@@ -192,6 +192,10 @@
   background: #ed3835;
 }
 
+.state-notRecommended {
+  background: #ed3835;
+}
+
 .inventory-state-label {
   justify-self: start;
   font-size: 18px;
@@ -209,6 +213,10 @@
 }
 
 .state-text-low {
+  color: #ed3835;
+}
+
+.state-text-notRecommended {
   color: #ed3835;
 }
 

@@ -62,7 +62,7 @@ export interface InventoryItem {
   source_event_id: number | null;
   pending_change_type: PendingChangeType | string;
   pending_detected_quantity: number | null;
-  message: string | null;
+  message?: string | null;
 }
 
 export interface InventoryPatch {
@@ -125,7 +125,7 @@ export interface LlmAdviceResponse {
   accepted: boolean;
   errors: string[];
   advice: LlmAdvicePayload;
-  record_id: number | null;
+  record_id?: number | null;
 }
 
 export interface EvidenceSearchResponse {
@@ -149,7 +149,7 @@ export interface ProfilePatch {
   goal?: string;
   diet_preference?: string;
   cooking_condition?: string;
-  avoid_foods?: string[];
+  avoid_foods?: string[] | null;
   allergies_optional?: string | null;
   health_notes_optional?: string | null;
 }
