@@ -66,12 +66,12 @@
 
 .inventory-row {
   display: grid;
-  grid-template-columns: 78px minmax(0, 1fr) 92px 72px 100px;
+  grid-template-columns: 108px minmax(0, 1fr) 116px 84px 112px;
   align-items: center;
-  min-height: 190px;
-  gap: 14px;
+  min-height: 178px;
+  gap: 20px;
   border-top: 1px solid #e6ecf4;
-  padding: 24px 0;
+  padding: 30px 0;
 }
 
 .inventory-row:first-child {
@@ -80,7 +80,7 @@
 
 .inventory-food-image {
   display: grid;
-  width: 91px;
+  width: 96px;
   height: 96px;
   place-items: center;
   justify-self: start;
@@ -119,56 +119,47 @@
 .inventory-food-title {
   margin: 0;
   color: #0c192a;
-  font-size: 34px;
+  font-size: 42px;
   font-weight: 720;
-  line-height: 38px;
+  line-height: 48px;
   letter-spacing: 0;
 }
 
 .inventory-food-meta {
-  margin: 10px 0 0;
+  margin: 12px 0 0;
   color: #7d889d;
-  font-size: 20px;
+  font-size: 26px;
   font-weight: 420;
-  line-height: 28px;
+  line-height: 34px;
 }
 
-.inventory-detail-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 12px;
-  margin: 14px 0 0;
+.inventory-item-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
 }
 
-.inventory-detail-grid div {
-  min-width: 0;
+.inventory-item-facts span {
+  min-height: 36px;
+  padding: 7px 13px;
+  border-radius: 12px;
+  color: #536891;
+  background: rgba(244, 249, 255, 0.86);
+  font-size: 17px;
+  font-weight: 720;
+  line-height: 22px;
 }
 
-.inventory-detail-grid dt {
-  overflow: hidden;
-  margin: 0 0 3px;
-  color: #8a98b3;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.inventory-detail-grid dd {
-  overflow: hidden;
-  margin: 0;
-  color: #293750;
-  font-size: 13px;
-  font-weight: 680;
-  line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.inventory-item-facts .inventory-item-warning {
+  flex-basis: 100%;
+  color: #8b5e63;
+  background: rgba(239, 68, 68, 0.08);
 }
 
 .inventory-progress-track {
-  width: 92px;
-  height: 12px;
+  width: 116px;
+  height: 14px;
   overflow: hidden;
   border-radius: 6px;
   background: #e6edf6;
@@ -198,9 +189,9 @@
 
 .inventory-state-label {
   justify-self: start;
-  font-size: 18px;
-  font-weight: 430;
-  line-height: 24px;
+  font-size: 22px;
+  font-weight: 650;
+  line-height: 28px;
   white-space: nowrap;
 }
 
@@ -226,35 +217,52 @@
   justify-items: stretch;
 }
 
-.inventory-confirm-controls input {
+.inventory-confirm-controls input,
+.inventory-confirm-controls select {
   width: 100%;
-  min-height: 42px;
+  min-height: 52px;
   border: 1px solid rgba(143, 164, 194, 0.28);
   border-radius: 10px;
   padding: 0 11px;
   color: #0c192a;
   background: rgba(255, 255, 255, 0.76);
-  font-size: 15px;
+  font-size: 18px;
   outline: 0;
 }
 
-.inventory-confirm-controls button {
+.inventory-confirm-controls button,
+.inventory-event-controls button {
   display: inline-flex;
-  min-height: 42px;
+  min-height: 52px;
   align-items: center;
   justify-content: center;
   gap: 6px;
   border-radius: 10px;
   color: #ffffff;
   background: #2584ff;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 760;
   cursor: pointer;
 }
 
-.inventory-confirm-controls button:disabled {
+.inventory-confirm-controls button:disabled,
+.inventory-event-controls button:disabled {
   cursor: default;
   opacity: 0.64;
+}
+
+.inventory-event-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.inventory-event-controls button {
+  min-height: 40px;
+  padding: 0 8px;
+  color: #2584ff;
+  background: rgba(37, 132, 255, 0.1);
+  font-size: 14px;
 }
 
 .sr-only {
@@ -334,9 +342,9 @@
   }
 
   .inventory-row {
-    grid-template-columns: 72px minmax(0, 1fr);
+    grid-template-columns: 72px minmax(0, 1fr) minmax(0, auto);
     grid-template-areas:
-      "image copy"
+      "image copy copy"
       "image progress state"
       "image confirm confirm";
     gap: 8px 14px;
@@ -367,20 +375,26 @@
   }
 
   .inventory-food-title {
-    font-size: 24px;
-    line-height: 28px;
+    font-size: 28px;
+    line-height: 34px;
   }
 
   .inventory-food-meta {
     margin-top: 8px;
-    font-size: 17px;
-    line-height: 22px;
+    font-size: 19px;
+    line-height: 25px;
   }
 
-  .inventory-detail-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 7px 10px;
+  .inventory-item-facts {
+    gap: 8px;
     margin-top: 12px;
+  }
+
+  .inventory-item-facts span {
+    min-height: 30px;
+    padding: 5px 10px;
+    font-size: 14px;
+    line-height: 20px;
   }
 
   .inventory-progress-track {
@@ -390,13 +404,23 @@
 
   .inventory-state-label {
     grid-area: state;
-    font-size: 17px;
-    line-height: 22px;
+    min-width: 0;
+    max-width: 100%;
+    justify-self: end;
+    font-size: 18px;
+    line-height: 24px;
+    overflow-wrap: anywhere;
+    text-align: right;
+    white-space: normal;
   }
 
   .inventory-confirm-controls {
     grid-area: confirm;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: center;
+  }
+
+  .inventory-event-controls {
+    grid-column: 1 / -1;
   }
 }

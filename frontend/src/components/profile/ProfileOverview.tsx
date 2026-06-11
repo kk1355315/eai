@@ -9,11 +9,13 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { Profile } from "../../api/types";
+import { formatBeijingDateTime } from "../../lib/datetime";
 import { useLanguage } from "../../lib/language";
 import styles from "./ProfileOverview.module.css";
 
 type ProfileOverviewProps = {
   profile: Profile;
+  onEdit?: () => void;
 };
 
 type ProfileRow = {
@@ -22,7 +24,7 @@ type ProfileRow = {
   tags: string[];
 };
 
-export function ProfileOverview({ profile }: ProfileOverviewProps) {
+export function ProfileOverview({ profile, onEdit }: ProfileOverviewProps) {
   const { language, t } = useLanguage();
   const rows = buildRows(profile, language, t);
 
@@ -34,7 +36,7 @@ export function ProfileOverview({ profile }: ProfileOverviewProps) {
         </div>
         <div className={styles.identityCopy}>
           <h2>{t("profile")}</h2>
-          <p>{profile.updated_at ? `Updated ${formatDate(profile.updated_at)}` : t("none")}</p>
+          <p>{profile.updated_at ? `${t("updated")} ${formatDate(profile.updated_at)}` : t("none")}</p>
         </div>
       </section>
 
@@ -43,7 +45,13 @@ export function ProfileOverview({ profile }: ProfileOverviewProps) {
           const Icon = row.icon;
 
           return (
-            <button className={styles.menuRow} key={row.title} type="button">
+            <button
+              aria-label={`${t("editProfileSection")} ${row.title}`}
+              className={styles.menuRow}
+              key={row.title}
+              onClick={onEdit}
+              type="button"
+            >
               <span className={styles.iconWrap} aria-hidden="true">
                 <Icon size={30} strokeWidth={2} />
               </span>
@@ -131,5 +139,5 @@ function tagsFromText(value: string | null | undefined, fallback: string) {
 }
 
 function formatDate(value: string) {
-  return value.replace("T", " ").replace(/\.\d+/, "").replace(/Z$/, "");
+  return formatBeijingDateTime(value);
 }

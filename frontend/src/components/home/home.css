@@ -295,6 +295,198 @@
 
 @media (max-width: 760px) {
   .home-card {
+    box-sizing: border-box;
     width: 100%;
+    max-width: 100%;
+    border-radius: 24px;
+  }
+
+  .home-card::before {
+    border-radius: 22px;
+  }
+
+  .home-recommended {
+    height: auto;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    padding: 28px 22px 26px;
+  }
+
+  .home-recommended > div {
+    min-width: 0;
+  }
+
+  .home-recommended-kicker {
+    width: auto;
+    font-size: 24px;
+    line-height: 31px;
+  }
+
+  .home-recommended-title {
+    margin: 14px 0 10px;
+    font-size: 38px;
+    line-height: 46px;
+    overflow-wrap: anywhere;
+  }
+
+  .home-recommended-copy {
+    font-size: 22px;
+    line-height: 31px;
+  }
+
+  .home-recommended-pill {
+    box-sizing: border-box;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 50px;
+    gap: 12px;
+    margin-top: 20px;
+    padding: 0 18px;
+    font-size: 18px;
+    line-height: 24px;
+  }
+
+  .home-fruit-photo {
+    width: 100%;
+    max-width: 424px;
+    height: auto;
+    aspect-ratio: 424 / 239;
+    margin: 0 auto;
+  }
+
+  .home-hero-image {
+    width: 100%;
+    max-width: 424px;
+    height: auto;
+    max-height: 239px;
+  }
+
+  .home-section-card {
+    height: auto;
+    padding: 26px 20px;
+  }
+
+  .home-section-head {
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
+
+  .home-section-title {
+    font-size: 26px;
+    line-height: 32px;
+  }
+
+  .home-priority-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .home-priority-item {
+    height: auto;
+    min-height: 112px;
+    grid-template-columns: 64px minmax(0, 1fr) 12px;
+    gap: 16px;
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .home-priority-item > div,
+  .home-need-row > div,
+  .home-advisor-card > div,
+  .home-pending-card > div {
+    min-width: 0;
+  }
+
+  .home-item-title {
+    font-size: 22px;
+    line-height: 28px;
+    overflow-wrap: anywhere;
+  }
+
+  .home-item-meta {
+    margin-top: 8px;
+    font-size: 18px;
+    line-height: 24px;
+    overflow-wrap: anywhere;
+  }
+
+  .home-need-head {
+    margin-bottom: 18px;
+  }
+
+  .home-need-list {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  .home-need-row {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 16px;
+    min-height: 0;
+    padding: 16px 0;
+    border-top: 1px solid #dce3ee;
+    border-left: 0;
+  }
+
+  .home-need-row:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .home-need-row + .home-need-row {
+    padding-top: 16px;
+    padding-left: 0;
+    border-top: 1px solid #dce3ee;
+  }
+
+  .home-need-row .home-item-meta {
+    font-size: 18px;
+    line-height: 25px;
+  }
+
+  .home-advisor-card {
+    height: auto;
+    min-height: 112px;
+    grid-template-columns: 64px minmax(0, 1fr) 24px;
+    gap: 16px;
+    padding: 24px 20px;
+  }
+
+  .home-advisor-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+  }
+
+  .home-advisor-title {
+    font-size: 26px;
+    line-height: 32px;
+    overflow-wrap: anywhere;
+  }
+
+  .home-advisor-copy {
+    font-size: 19px;
+    line-height: 26px;
+    overflow-wrap: anywhere;
+  }
+
+  .home-pending-card {
+    width: 100%;
+    height: auto;
+    min-height: 47px;
+    padding: 10px 16px;
+    justify-self: stretch;
+  }
+
+  .home-pending-title {
+    font-size: 18px;
+    line-height: 24px;
+    overflow-wrap: anywhere;
+  }
+
+  .home-empty-copy {
+    font-size: 18px;
+    line-height: 27px;
+    overflow-wrap: anywhere;
   }
 }

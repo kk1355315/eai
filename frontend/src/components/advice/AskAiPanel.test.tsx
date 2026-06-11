@@ -48,4 +48,30 @@ describe("AskAiPanel", () => {
     expect(screen.getByText("Inventory has no confirmed fruit.")).toBeTruthy();
     expect(screen.getByText("Use confirmed inventory as the source of truth.")).toBeTruthy();
   });
+
+  it("renders AI recommendation cards inline inside the result panel", () => {
+    const { container } = renderWithProviders(
+      <AskAiPanel
+        onSubmit={vi.fn()}
+        result={{
+          accepted: true,
+          advice: {
+            summary: "Start with the ripest option.",
+            recommendations: [
+              {
+                id: "eat-pear",
+                title: "Eat the pear first",
+                content: "It is ready today.",
+                confidence: 0.8,
+              },
+            ],
+            fallback: false,
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Eat the pear first")).toBeTruthy();
+    expect(container.querySelectorAll("section")).toHaveLength(1);
+  });
 });

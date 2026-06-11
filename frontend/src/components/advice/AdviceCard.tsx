@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { CheckCircle2, Info, ShoppingBasket } from "lucide-react";
+import { CheckCircle2, ShoppingBasket } from "lucide-react";
 import { GlassCard } from "../ui/GlassCard";
 import { getActionTypeLabel } from "../../lib/status";
 import { getFoodDisplayName } from "../../lib/foods";
@@ -19,23 +19,28 @@ export type AdviceItem = {
 type AdviceCardProps = {
   item: AdviceItem;
   tone?: "shopping" | "ai";
+  variant?: "card" | "inline";
 };
 
 const styles = {
   card: {
-    padding: 20,
+    padding: 28,
+  },
+  inlineCard: {
+    padding: "22px 0 0",
+    borderTop: "1px solid rgba(143, 164, 194, 0.18)",
   },
   header: {
     display: "grid",
-    gridTemplateColumns: "38px 1fr",
+    gridTemplateColumns: "46px 1fr",
     alignItems: "center",
-    gap: 12,
-    marginBottom: 10,
+    gap: 16,
+    marginBottom: 16,
   },
   icon: {
-    width: 38,
-    height: 38,
-    borderRadius: 9,
+    width: 46,
+    height: 46,
+    borderRadius: 12,
     display: "grid",
     placeItems: "center",
     color: "#2584ff",
@@ -44,50 +49,50 @@ const styles = {
   title: {
     margin: 0,
     color: "#07152f",
-    fontSize: 19,
-    lineHeight: 1.18,
+    fontSize: 25,
+    lineHeight: 1.22,
     fontWeight: 800,
     letterSpacing: 0,
   },
   content: {
     margin: 0,
     color: "#697895",
-    fontSize: 16,
-    lineHeight: 1.52,
+    fontSize: 20,
+    lineHeight: 1.58,
   },
   meta: {
     display: "flex",
     flexWrap: "wrap" as const,
-    gap: 8,
-    marginTop: 14,
+    gap: 10,
+    marginTop: 20,
   },
   pill: {
-    borderRadius: 8,
-    padding: "6px 10px",
+    borderRadius: 10,
+    padding: "8px 12px",
     color: "#697895",
     background: "rgba(255, 255, 255, 0.66)",
-    fontSize: 13,
-    lineHeight: 1.2,
+    fontSize: 16,
+    lineHeight: 1.25,
   },
   evidence: {
     display: "grid",
-    gap: 8,
-    marginTop: 14,
-    paddingTop: 14,
+    gap: 10,
+    marginTop: 20,
+    paddingTop: 18,
     borderTop: "1px solid rgba(143, 164, 194, 0.18)",
   },
   evidenceTitle: {
     margin: 0,
     color: "#07152f",
-    fontSize: 14,
+    fontSize: 17,
     fontWeight: 800,
     lineHeight: 1.25,
   },
   evidenceText: {
     margin: 0,
     color: "#697895",
-    fontSize: 14,
-    lineHeight: 1.45,
+    fontSize: 17,
+    lineHeight: 1.55,
   },
 } satisfies Record<string, CSSProperties>;
 
@@ -98,7 +103,7 @@ function confidenceCopy(confidence?: number | string | null) {
   return `${Math.round(confidence * 100)}% confidence`;
 }
 
-export function AdviceCard({ item, tone = "ai" }: AdviceCardProps) {
+export function AdviceCard({ item, tone = "ai", variant = "card" }: AdviceCardProps) {
   const Icon = tone === "shopping" ? ShoppingBasket : CheckCircle2;
   const confidence = confidenceCopy(item.confidence);
   const actionLabel =
@@ -109,8 +114,8 @@ export function AdviceCard({ item, tone = "ai" }: AdviceCardProps) {
       ? [item.basis]
       : [];
 
-  return (
-    <GlassCard style={styles.card}>
+  const content = (
+    <>
       <div style={styles.header}>
         <span style={styles.icon} aria-hidden="true">
           <Icon size={19} strokeWidth={2.2} />
@@ -147,6 +152,16 @@ export function AdviceCard({ item, tone = "ai" }: AdviceCardProps) {
           ) : null}
         </div>
       ) : null}
+    </>
+  );
+
+  if (variant === "inline") {
+    return <article style={styles.inlineCard}>{content}</article>;
+  }
+
+  return (
+    <GlassCard style={styles.card}>
+      {content}
     </GlassCard>
   );
 }

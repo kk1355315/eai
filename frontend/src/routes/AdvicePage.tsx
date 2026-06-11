@@ -28,9 +28,9 @@ type MutationLike<TPayload, TResult> = {
 
 const styles = {
   back: {
-    width: 42,
-    height: 42,
-    borderRadius: 10,
+    width: 54,
+    height: 54,
+    borderRadius: 14,
     display: "grid",
     placeItems: "center",
     marginBottom: 18,
@@ -43,24 +43,24 @@ const styles = {
   sectionHeader: {
     display: "flex",
     alignItems: "center",
-    gap: 9,
-    margin: "4px 2px 12px",
+    gap: 12,
+    margin: "8px 2px 16px",
     color: "#07152f",
   },
   sectionTitle: {
     margin: 0,
-    fontSize: 24,
+    fontSize: 30,
     lineHeight: 1.12,
     fontWeight: 820,
     letterSpacing: 0,
   },
   stack: {
     display: "grid",
-    gap: 16,
+    gap: 22,
   },
   cards: {
     display: "grid",
-    gap: 12,
+    gap: 18,
   },
 } satisfies Record<string, CSSProperties>;
 

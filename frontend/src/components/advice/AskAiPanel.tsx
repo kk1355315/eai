@@ -29,18 +29,18 @@ type AskAiPanelProps = {
 
 const styles = {
   card: {
-    padding: 22,
+    padding: 28,
   },
   header: {
     display: "flex",
     alignItems: "center",
-    gap: 10,
-    marginBottom: 16,
+    gap: 14,
+    marginBottom: 22,
   },
   icon: {
-    width: 38,
-    height: 38,
-    borderRadius: 9,
+    width: 46,
+    height: 46,
+    borderRadius: 12,
     display: "grid",
     placeItems: "center",
     color: "#2584ff",
@@ -49,7 +49,7 @@ const styles = {
   title: {
     margin: 0,
     color: "#07152f",
-    fontSize: 24,
+    fontSize: 30,
     lineHeight: 1.12,
     fontWeight: 820,
     letterSpacing: 0,
@@ -60,23 +60,23 @@ const styles = {
   },
   textarea: {
     width: "100%",
-    minHeight: 112,
+    minHeight: 132,
     boxSizing: "border-box" as const,
     resize: "vertical" as const,
     border: "1px solid rgba(143, 164, 194, 0.22)",
-    borderRadius: 10,
-    padding: "16px 18px",
+    borderRadius: 12,
+    padding: "20px 22px",
     color: "#07152f",
     background: "rgba(255, 255, 255, 0.68)",
     font: "inherit",
-    fontSize: 16,
-    lineHeight: 1.45,
+    fontSize: 19,
+    lineHeight: 1.5,
     outline: "none",
   },
   searchRow: {
     display: "grid",
     gridTemplateColumns: "1fr auto",
-    gap: 10,
+    gap: 12,
     alignItems: "center",
   },
   inputWrap: {
@@ -85,8 +85,8 @@ const styles = {
     alignItems: "center",
     gap: 8,
     border: "1px solid rgba(143, 164, 194, 0.22)",
-    borderRadius: 9,
-    padding: "11px 14px",
+    borderRadius: 12,
+    padding: "15px 16px",
     color: "#8a98b3",
     background: "rgba(255, 255, 255, 0.58)",
   },
@@ -97,26 +97,26 @@ const styles = {
     color: "#07152f",
     background: "transparent",
     font: "inherit",
-    fontSize: 15,
+    fontSize: 18,
   },
   thinking: {
     display: "flex",
     alignItems: "center",
     gap: 8,
     color: "#697895",
-    fontSize: 14,
-    lineHeight: 1.3,
+    fontSize: 17,
+    lineHeight: 1.35,
   },
   checkbox: {
-    width: 18,
-    height: 18,
+    width: 22,
+    height: 22,
     accentColor: "#2584ff",
   },
   button: {
-    width: 46,
-    height: 46,
+    width: 58,
+    height: 58,
     border: 0,
-    borderRadius: 9,
+    borderRadius: 13,
     display: "grid",
     placeItems: "center",
     color: "#ffffff",
@@ -130,30 +130,30 @@ const styles = {
   },
   result: {
     display: "grid",
-    gap: 12,
-    marginTop: 18,
+    gap: 18,
+    marginTop: 24,
   },
   summary: {
     margin: 0,
     color: "#07152f",
-    fontSize: 17,
-    lineHeight: 1.5,
+    fontSize: 20,
+    lineHeight: 1.58,
     fontWeight: 700,
   },
   notice: {
-    borderRadius: 10,
-    padding: 14,
+    borderRadius: 12,
+    padding: 16,
     color: "#697895",
     background: "rgba(255, 138, 0, 0.1)",
-    fontSize: 14,
-    lineHeight: 1.45,
+    fontSize: 17,
+    lineHeight: 1.5,
   },
   errorList: {
     margin: 0,
     paddingLeft: 18,
     color: "#8b5e63",
-    fontSize: 14,
-    lineHeight: 1.45,
+    fontSize: 17,
+    lineHeight: 1.5,
   },
 } satisfies Record<string, CSSProperties>;
 
@@ -237,7 +237,11 @@ export function AskAiPanel({ result, isPending = false, onSubmit }: AskAiPanelPr
           ) : null}
           {result.advice?.summary ? <p style={styles.summary}>{result.advice.summary}</p> : null}
           {recommendations.map((item, index) => (
-            <AdviceCard key={item.id ?? `${item.title ?? "advice"}-${index}`} item={item} />
+            <AdviceCard
+              key={item.id ?? `${item.title ?? "advice"}-${index}`}
+              item={item}
+              variant="inline"
+            />
           ))}
         </div>
       ) : null}
