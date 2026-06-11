@@ -1,0 +1,43 @@
+.card {
+  display: grid;
+  gap: 18px;
+  padding: 26px;
+}
+
+.iconWrap {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(37, 132, 255, 0.09);
+  color: var(--color-primary);
+}
+
+.icon {
+  width: 26px;
+  height: 26px;
+}
+
+.copy {
+  min-width: 0;
+}
+
+.copy h2 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+.copy p {
+  max-width: 28ch;
+  margin: 9px 0 0;
+  color: var(--color-muted);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.42;
+  letter-spacing: 0;
+}

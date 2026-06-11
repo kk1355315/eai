@@ -1,0 +1,227 @@
+.stack {
+  display: grid;
+  gap: 21px;
+  width: min(100%, 809px);
+}
+
+.identityCard,
+.menuRow {
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 34px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 18px 46px rgba(74, 103, 139, 0.12);
+  backdrop-filter: blur(18px);
+}
+
+.identityCard {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 190px minmax(0, 1fr);
+  align-items: center;
+  gap: 48px;
+  min-height: 274px;
+  padding: 32px 40px;
+  border-radius: 42px;
+}
+
+.avatar {
+  display: grid;
+  width: 190px;
+  height: 190px;
+  place-items: center;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  background: #edf5fc;
+  box-shadow: 0 12px 28px rgba(74, 103, 139, 0.18);
+  overflow: hidden;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.identityCopy {
+  min-width: 0;
+}
+
+.identityCopy h2 {
+  overflow: hidden;
+  margin: 0;
+  color: #07152f;
+  font-size: 40px;
+  font-weight: 850;
+  line-height: 1.08;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.identityCopy p {
+  overflow: hidden;
+  margin: 22px 0 0;
+  color: #697895;
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menuList {
+  display: grid;
+  gap: 21px;
+}
+
+.menuRow {
+  display: grid;
+  grid-template-columns: 125px minmax(0, 1fr) 46px;
+  align-items: center;
+  width: 100%;
+  min-height: 170px;
+  padding: 35px 46px 32px 58px;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.menuRow:active {
+  transform: scale(0.99);
+}
+
+.iconWrap {
+  color: #536891;
+}
+
+.rowCopy {
+  display: grid;
+  min-width: 0;
+  gap: 18px;
+}
+
+.rowTitle {
+  overflow: hidden;
+  color: #07152f;
+  font-size: 34px;
+  font-weight: 820;
+  line-height: 1.08;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tags {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 11px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-height: 49px;
+  padding: 0 23px;
+  border: 1px solid rgba(255, 255, 255, 0.86);
+  border-radius: 25px;
+  color: #315995;
+  background: rgba(244, 249, 255, 0.74);
+  box-shadow: inset 0 0 0 1px rgba(143, 164, 194, 0.08);
+  font-size: 25px;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.chevron {
+  justify-self: end;
+  color: #536891;
+}
+
+@media (max-width: 760px) {
+  .stack {
+    gap: 17px;
+  }
+
+  .identityCard {
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 24px;
+    min-height: 156px;
+    padding: 24px;
+    border-radius: 32px;
+  }
+
+  .avatar {
+    width: 96px;
+    height: 96px;
+  }
+
+  .identityCopy h2 {
+    font-size: 30px;
+  }
+
+  .identityCopy p {
+    margin-top: 10px;
+    font-size: 18px;
+  }
+
+  .menuList {
+    gap: 15px;
+  }
+
+  .menuRow {
+    grid-template-columns: 56px minmax(0, 1fr) 28px;
+    min-height: 112px;
+    padding: 20px 22px;
+    border-radius: 28px;
+  }
+
+  .rowCopy {
+    gap: 10px;
+  }
+
+  .rowTitle {
+    font-size: 22px;
+  }
+
+  .tag {
+    min-height: 34px;
+    padding: 0 14px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 380px) {
+  .identityCard {
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 18px;
+    min-height: 124px;
+    padding: 24px 20px;
+  }
+
+  .avatar {
+    width: 76px;
+    height: 76px;
+    font-size: 24px;
+  }
+
+  .identityCopy h2 {
+    font-size: 25px;
+  }
+
+  .identityCopy p {
+    font-size: 17px;
+  }
+
+  .menuRow {
+    grid-template-columns: 56px minmax(0, 1fr) 24px;
+    min-height: 104px;
+    padding: 20px;
+  }
+
+  .rowTitle {
+    font-size: 21px;
+  }
+}

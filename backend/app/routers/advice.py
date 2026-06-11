@@ -15,7 +15,9 @@ from app.models import (
     GuidelineRule,
     InventoryItem,
     NutritionFact,
+    NutritionReference,
     UserFoodHabit,
+    UserProfile,
 )
 from app.config import settings
 from app.routers.inventory import CHECK_REQUIRED_MESSAGE, _refresh_storage_states
@@ -142,7 +144,8 @@ class AdviceItem(BaseModel):
     action_type: ActionType
     related_foods: list[str]
     basis: list[str]
-    evidence_ids: list[str]
+    evidence_ids: list[str] = Field(default_factory=list)
+    evidence_sources: list[dict[str, Any]] = Field(default_factory=list)
     confidence: Literal["low", "medium", "high"] = "medium"
 
 
@@ -271,7 +274,10 @@ def get_shopping_advice(session: SessionDep) -> ShoppingAdviceResponse:
             )
         )
 
-    return ShoppingAdviceResponse(recommendations=recommendations)
+    advice = LlmAdvicePayload(summary="", recommendations=recommendations)
+    return ShoppingAdviceResponse(
+        recommendations=_attach_evidence_sources(advice, session).recommendations
+    )
 
 
 @router.post("/advice/llm/validate", response_model=LlmAdviceResponse)
@@ -288,7 +294,7 @@ def validate_llm_advice(payload: LlmAdviceRequest, session: SessionDep) -> LlmAd
     return LlmAdviceResponse(
         accepted=True,
         errors=[],
-        advice=payload.llm_output,
+        advice=_attach_evidence_sources(payload.llm_output, session),
         record_id=None,
     )
 
@@ -298,7 +304,7 @@ def validate_llm_advice(payload: LlmAdviceRequest, session: SessionDep) -> LlmAd
 def generate_llm_advice(
     payload: LlmGenerateRequest, session: SessionDep
 ) -> LlmAdviceResponse:
-    context = build_advice_context(session, payload.search_query or payload.question)
+    context = build_advice_context(session, payload.search_query)
     enable_thinking = (
         settings.llm_enable_thinking_default
         if payload.enable_thinking is None
@@ -315,6 +321,7 @@ def generate_llm_advice(
         )
 
     validation_context = _advice_context(session)
+    advice = _enrich_llm_evidence(advice, validation_context)
     errors = _validate_llm_output(advice, validation_context)
     if errors:
         try:
@@ -331,6 +338,8 @@ def generate_llm_advice(
                 advice=_fallback_advice(session),
                 record_id=None,
             )
+        validation_context = _advice_context(session)
+        advice = _enrich_llm_evidence(advice, validation_context)
     return _store_checked_advice(advice, session)
 
 
@@ -402,6 +411,12 @@ def _check_item(
 
 def _fallback_advice(session: Session) -> LlmAdvicePayload:
     today = get_today_advice(session)
+    foods = session.exec(select(FoodItem)).all()
+    profile = session.get(UserProfile, 1)
+    profile_blocked_foods = _profile_blocked_foods(_profile_payload(profile), foods)
+    priority_items = [
+        item for item in today.today_priority if item["food"] not in profile_blocked_foods
+    ]
     recommendations = [
         AdviceItem(
             title=f"优先处理 {item['display_name']}",
@@ -412,9 +427,17 @@ def _fallback_advice(session: Session) -> LlmAdvicePayload:
             evidence_ids=item["evidence_ids"],
             confidence="medium",
         )
-        for item in today.today_priority[:3]
+        for item in priority_items[:3]
     ]
-    return LlmAdvicePayload(summary="LLM 输出未通过校验，已返回规则版建议。", recommendations=recommendations)
+    if not recommendations:
+        return LlmAdvicePayload(
+            summary="没有符合用户资料和库存状态的规则版建议。",
+            recommendations=[],
+        )
+    return _attach_evidence_sources(
+        LlmAdvicePayload(summary="LLM 输出未通过校验，已返回规则版建议。", recommendations=recommendations),
+        session,
+    )
 
 
 def _validate_llm_output(advice: LlmAdvicePayload, context: dict[str, Any]) -> list[str]:
@@ -525,6 +548,76 @@ def _request_llm_advice(
     return LlmAdvicePayload.model_validate(raw_output)
 
 
+def _enrich_llm_evidence(
+    advice: LlmAdvicePayload, context: dict[str, Any]
+) -> LlmAdvicePayload:
+    known_evidence_ids = context["evidence_ids"]
+    for item in advice.recommendations:
+        inferred_foods = _infer_item_foods(item, context)
+        if inferred_foods:
+            item.related_foods = _merge_food_labels(item.related_foods, sorted(inferred_foods))
+        inferred_ids = _infer_evidence_ids_from_hints(item, context, inferred_foods)
+        if not inferred_ids:
+            continue
+        item.evidence_ids = _merge_evidence_ids(
+            item.evidence_ids,
+            [evidence_id for evidence_id in inferred_ids if evidence_id in known_evidence_ids],
+        )
+    return advice
+
+
+def _infer_evidence_ids_from_hints(
+    item: AdviceItem, context: dict[str, Any], related_foods: set[str] | None = None
+) -> list[str]:
+    foods = related_foods if related_foods is not None else _infer_item_foods(item, context)
+    if not foods:
+        return []
+
+    actions = _effective_action_types(item)
+    evidence_ids: list[str] = []
+    for hint in context.get("evidence_hints", []):
+        if hint.get("food") not in foods:
+            continue
+        if hint.get("action_type") not in actions:
+            continue
+        evidence_ids.extend(str(value) for value in hint.get("use_evidence_ids", []))
+    return evidence_ids
+
+
+def _infer_item_foods(item: AdviceItem, context: dict[str, Any]) -> set[str]:
+    supported_foods = set(context["supported_foods"])
+    alias_to_food = _alias_to_food(context)
+    foods: set[str] = set()
+
+    for food in item.related_foods:
+        normalized = alias_to_food.get(food.lower(), food)
+        if normalized in supported_foods:
+            foods.add(normalized)
+
+    item_text = _item_text(item).lower()
+    for alias, food in alias_to_food.items():
+        if food in supported_foods and _mentions_alias(item_text, alias):
+            foods.add(food)
+    return foods
+
+
+def _alias_to_food(context: dict[str, Any]) -> dict[str, str]:
+    aliases: dict[str, str] = {}
+    for food, food_aliases in context.get("food_aliases", {}).items():
+        aliases[str(food).lower()] = str(food)
+        for alias in food_aliases:
+            aliases[str(alias).lower()] = str(food)
+    return aliases
+
+
+def _merge_food_labels(current: list[str], inferred: list[str]) -> list[str]:
+    return list(dict.fromkeys([*current, *inferred]))
+
+
+def _merge_evidence_ids(current: list[str], inferred: list[str]) -> list[str]:
+    return list(dict.fromkeys([*current, *inferred]))
+
+
 def _store_checked_advice(advice: LlmAdvicePayload, session: Session) -> LlmAdviceResponse:
     context = _advice_context(session)
     errors = _validate_llm_output(advice, context)
@@ -543,6 +636,12 @@ def _store_checked_advice(advice: LlmAdvicePayload, session: Session) -> LlmAdvi
             for evidence_id in item.evidence_ids
         }
     )
+    evidence_sources = _evidence_source_map(session)
+    for item in advice.recommendations:
+        item.evidence_sources = _sources_for_evidence_ids(
+            item.evidence_ids,
+            evidence_sources,
+        )
     record = AdviceRecord(
         user_id=1,
         advice_type="llm",
@@ -555,6 +654,102 @@ def _store_checked_advice(advice: LlmAdvicePayload, session: Session) -> LlmAdvi
     session.commit()
     session.refresh(record)
     return LlmAdviceResponse(accepted=True, errors=[], advice=advice, record_id=record.id)
+
+
+def _attach_evidence_sources(advice: LlmAdvicePayload, session: Session) -> LlmAdvicePayload:
+    evidence_sources = _evidence_source_map(session)
+    for item in advice.recommendations:
+        item.evidence_sources = _sources_for_evidence_ids(item.evidence_ids, evidence_sources)
+    return advice
+
+
+def _sources_for_evidence_ids(
+    evidence_ids: list[str],
+    evidence_sources: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    sources: list[dict[str, Any]] = []
+    seen: set[tuple[str, str | None]] = set()
+    for evidence_id in evidence_ids:
+        source = evidence_sources.get(evidence_id)
+        if source is None:
+            continue
+        key = (str(source.get("title")), source.get("url"))
+        if key in seen:
+            continue
+        seen.add(key)
+        sources.append(source)
+    return sources
+
+
+def _evidence_source_map(session: Session) -> dict[str, dict[str, Any]]:
+    foods = _food_map(session)
+    sources: dict[str, dict[str, Any]] = {}
+
+    for item in session.exec(select(InventoryItem)).all():
+        food = foods.get(item.food_item_id)
+        if food is None:
+            continue
+        sources[item.evidence_id] = {
+            "type": "inventory",
+            "title": f"{food.display_name} 库存记录",
+            "source": "用户确认库存",
+            "summary": f"当前库存 {item.confirmed_quantity} {item.unit}，状态 {item.storage_state or 'unknown'}。",
+            "url": None,
+        }
+
+    for rule in session.exec(select(FoodStorageRule)).all():
+        food = foods.get(rule.food_item_id)
+        if food is None:
+            continue
+        sources[rule.evidence_id] = {
+            "type": "storage",
+            "title": f"{food.display_name} 保存建议",
+            "source": "USDA FoodKeeper",
+            "summary": rule.source_text,
+            "url": "https://www.foodsafety.gov/keep-food-safe/foodkeeper-app",
+        }
+
+    references = {
+        reference.id: reference
+        for reference in session.exec(select(NutritionReference)).all()
+    }
+    for fact in session.exec(select(NutritionFact)).all():
+        food = foods.get(fact.food_item_id)
+        reference = references.get(fact.reference_id)
+        if food is None:
+            continue
+        source_name = reference.source_name if reference else "USDA FoodData Central"
+        source_url = fact.source_url or (reference.source_url if reference else None)
+        sources[fact.evidence_id] = {
+            "type": "nutrition",
+            "title": f"{food.display_name} 营养数据",
+            "source": source_name,
+            "summary": f"{fact.serving_size_text}；碳水 {fact.carbs_g}g，膳食纤维 {fact.fiber_g}g。",
+            "url": source_url,
+        }
+
+    for rule in session.exec(select(GuidelineRule)).all():
+        sources[rule.evidence_id] = {
+            "type": "guideline",
+            "title": rule.source_name,
+            "source": rule.source_name,
+            "summary": rule.evidence_summary,
+            "url": rule.source_url,
+        }
+
+    for habit in session.exec(select(UserFoodHabit)).all():
+        food = foods.get(habit.food_item_id)
+        if food is None:
+            continue
+        sources[habit.evidence_id] = {
+            "type": "habit",
+            "title": f"{food.display_name} 使用习惯",
+            "source": "用户历史记录",
+            "summary": f"{habit.habit_type}，置信分 {habit.score:.2f}。",
+            "url": None,
+        }
+
+    return sources
 
 
 def _advice_context(session: Session) -> dict[str, Any]:
@@ -589,10 +784,15 @@ def _advice_context(session: Session) -> dict[str, Any]:
             for food in foods
             if food.model_label in blocked_foods
         },
+        "food_aliases": {
+            food.model_label: _food_aliases(food)
+            for food in foods
+        },
         "stocked_foods": stocked_foods,
         "avoid_foods": avoid_foods,
         "profile_blocked_foods": profile_blocked_foods,
         "profile": context.get("profile", {}),
+        "evidence_hints": context.get("evidence_hints", []),
     }
 
 
@@ -749,6 +949,16 @@ def _profile_blocked_foods(profile: dict[str, Any], foods: list[FoodItem]) -> se
         ):
             blocked.add(food.model_label)
     return blocked
+
+
+def _profile_payload(profile: UserProfile | None) -> dict[str, Any]:
+    if profile is None:
+        return {}
+    return {
+        "avoid_foods": _loads(profile.avoid_foods, []),
+        "allergies_optional": profile.allergies_optional,
+        "health_notes_optional": profile.health_notes_optional,
+    }
 
 
 def _food_aliases(food: FoodItem) -> set[str]:
