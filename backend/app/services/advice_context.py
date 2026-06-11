@@ -67,11 +67,13 @@ def build_advice_context(session: Session, query: str | None = None) -> dict[str
         "guideline_rules": [_guideline_payload(rule) for rule in guideline_rules],
         "habits": [_habit_payload(habit, food_by_id[habit.food_item_id]) for habit in habits],
     }
+    context["profile_blocked_foods"] = sorted(_profile_blocked_foods(context["profile"], foods))
     context["evidence_hints"] = _evidence_hints(context)
     if query:
         results = search_evidence(context, query)
         trimmed = {
             "profile": context["profile"],
+            "profile_blocked_foods": context["profile_blocked_foods"],
             "supported_foods": context["supported_foods"],
             "search_query": query,
             "search_results": results,
@@ -123,6 +125,7 @@ def collect_evidence_ids(context: dict[str, Any]) -> set[str]:
 
 def _evidence_hints(context: dict[str, Any]) -> list[dict[str, Any]]:
     hints: list[dict[str, Any]] = []
+    profile_blocked_foods = {str(food) for food in context.get("profile_blocked_foods", [])}
     storage_by_food_location = {
         (item.get("food"), item.get("storage_location")): str(item.get("evidence_id"))
         for item in context.get("storage_rules", [])
@@ -141,6 +144,8 @@ def _evidence_hints(context: dict[str, Any]) -> list[dict[str, Any]]:
         if item.get("status") != "available" or int(item.get("confirmed_quantity") or 0) <= 0:
             continue
         food = str(item.get("food"))
+        if food in profile_blocked_foods:
+            continue
         inventory_id = str(item.get("evidence_id"))
         storage_id = storage_by_food_location.get((food, item.get("storage_location")))
         nutri_id = nutri_by_food.get(food)
@@ -205,6 +210,64 @@ def _profile_payload(profile: UserProfile | None) -> dict[str, Any]:
         "allergies_optional": profile.allergies_optional,
         "health_notes_optional": profile.health_notes_optional,
     }
+
+
+def _profile_blocked_foods(profile: dict[str, Any], foods: list[FoodItem]) -> set[str]:
+    blocked = set(_normalize_food_labels(profile.get("avoid_foods", []), foods))
+    allergy_text = str(profile.get("allergies_optional") or "").lower()
+    health_text = str(profile.get("health_notes_optional") or "").lower()
+
+    for food in foods:
+        aliases = _food_aliases(food)
+        if _mentions_any(allergy_text, aliases):
+            blocked.add(food.model_label)
+        if _mentions_any(health_text, aliases) and any(
+            marker in health_text
+            for marker in ("过敏", "避免", "不吃", "不要吃", "不能吃", "忌口", "不适合", "avoid")
+        ):
+            blocked.add(food.model_label)
+    return blocked
+
+
+def _normalize_food_labels(values: list[str], foods: list[FoodItem]) -> set[str]:
+    aliases: dict[str, str] = {}
+    for food in foods:
+        aliases[food.model_label.lower()] = food.model_label
+        aliases[food.display_name.lower()] = food.model_label
+        try:
+            for alias in json.loads(food.aliases):
+                aliases[str(alias).lower()] = food.model_label
+        except json.JSONDecodeError:
+            pass
+    return {aliases.get(str(value).lower(), str(value).lower()) for value in values}
+
+
+def _food_aliases(food: FoodItem) -> set[str]:
+    aliases = {food.model_label.lower(), food.display_name.lower()}
+    try:
+        aliases.update(str(alias).lower() for alias in json.loads(food.aliases))
+    except json.JSONDecodeError:
+        pass
+    return aliases
+
+
+def _mentions_any(text: str, aliases: set[str]) -> bool:
+    return any(_mentions_alias(text, alias) for alias in aliases)
+
+
+def _mentions_alias(text: str, alias: str) -> bool:
+    normalized_alias = alias.lower().strip()
+    if not normalized_alias:
+        return False
+    if normalized_alias.isascii() and re.fullmatch(r"[a-z0-9_]+", normalized_alias):
+        return (
+            re.search(
+                rf"(?<![a-z0-9_]){re.escape(normalized_alias)}(?![a-z0-9_])",
+                text,
+            )
+            is not None
+        )
+    return normalized_alias in text
 
 
 def _inventory_payload(item: InventoryItem, food: FoodItem) -> dict[str, Any]:

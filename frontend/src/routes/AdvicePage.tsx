@@ -84,7 +84,7 @@ function toCardAdvice(item: AdviceViewModel): CardAdviceItem {
     actionLabel: item.actionLabel,
     relatedFoods: item.relatedSupportedFoods,
     basis: item.basis,
-    evidenceIds: item.evidence_ids,
+    evidenceSources: item.evidence_sources,
     confidence: item.confidence,
   };
 }

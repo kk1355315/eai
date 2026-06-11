@@ -374,6 +374,137 @@ def test_advice_llm_is_generation_entry(monkeypatch) -> None:
     assert "rule_fruit_moderation_001" in eat_first_hint["use_evidence_ids"]
 
 
+def test_llm_failure_fallback_respects_profile_avoid_foods(monkeypatch) -> None:
+    def fake_request_llm_json(*, system_prompt, user_prompt, enable_thinking):
+        raise ValueError("LLM failed")
+
+    with TestClient(app) as client:
+        client.patch("/profile", json={"avoid_foods": ["banana"]})
+        client.post("/recognitions", json=_recognition_payload(counts={"banana": 1}))
+        item = client.get("/inventory").json()[0]
+        client.post(f"/inventory/{item['id']}/confirm-change", json={})
+
+        monkeypatch.setattr("app.routers.advice.request_llm_json", fake_request_llm_json)
+        response = client.post(
+            "/advice/llm",
+            json={"question": "今天应该吃什么我", "search_query": "banana"},
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["accepted"] is False
+    assert data["advice"]["summary"] == "没有符合用户资料和库存状态的规则版建议。"
+    assert data["advice"]["recommendations"] == []
+
+
+def test_advice_llm_fills_missing_evidence_ids_from_backend_hints(monkeypatch) -> None:
+    def fake_request_llm_json(*, system_prompt, user_prompt, enable_thinking):
+        return {
+            "summary": "今天优先安排香蕉。",
+            "recommendations": [
+                {
+                    "title": "优先吃香蕉",
+                    "content": "香蕉处于 fresh 状态，可以优先安排。",
+                    "action_type": "eat_first",
+                    "related_foods": ["banana"],
+                    "basis": ["当前库存有香蕉"],
+                    "confidence": "medium",
+                }
+            ],
+        }
+
+    with TestClient(app) as client:
+        client.post("/recognitions", json=_recognition_payload(counts={"banana": 1}))
+        item = client.get("/inventory").json()[0]
+        client.post(f"/inventory/{item['id']}/confirm-change", json={})
+
+        monkeypatch.setattr("app.routers.advice.request_llm_json", fake_request_llm_json)
+        response = client.post(
+            "/advice/llm",
+            json={"question": "今天应该吃什么我", "enable_thinking": False},
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["accepted"] is True
+    assert data["errors"] == []
+    evidence_ids = data["advice"]["recommendations"][0]["evidence_ids"]
+    assert item["evidence_id"] in evidence_ids
+    assert "storage_banana_251_pantry" in evidence_ids
+    assert "nutri_banana_usda" in evidence_ids
+    assert "rule_fruit_moderation_001" in evidence_ids
+
+
+def test_advice_llm_infers_food_from_text_when_related_foods_is_empty(monkeypatch) -> None:
+    def fake_request_llm_json(*, system_prompt, user_prompt, enable_thinking):
+        prompt_payload = json.loads(user_prompt.split("\n\n", 1)[1])
+        assert any(
+            item.get("food") == "banana"
+            for item in prompt_payload["context"]["inventory"]
+        )
+        return {
+            "summary": "今天优先安排香蕉。",
+            "recommendations": [
+                {
+                    "title": "优先处理香蕉",
+                    "content": "香蕉处于 fresh 状态，可以优先安排。",
+                    "action_type": "eat_first",
+                    "related_foods": [],
+                    "basis": ["当前库存有香蕉"],
+                    "confidence": "medium",
+                }
+            ],
+        }
+
+    with TestClient(app) as client:
+        client.post("/recognitions", json=_recognition_payload(counts={"banana": 1}))
+        item = client.get("/inventory").json()[0]
+        client.post(f"/inventory/{item['id']}/confirm-change", json={})
+
+        monkeypatch.setattr("app.routers.advice.request_llm_json", fake_request_llm_json)
+        response = client.post(
+            "/advice/llm",
+            json={"question": "今天应该吃什么我", "enable_thinking": False},
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["accepted"] is True
+    recommendation = data["advice"]["recommendations"][0]
+    assert recommendation["related_foods"] == ["banana"]
+    assert item["evidence_id"] in recommendation["evidence_ids"]
+    assert "storage_banana_251_pantry" in recommendation["evidence_ids"]
+    source_titles = {source["title"] for source in recommendation["evidence_sources"]}
+    source_names = {source["source"] for source in recommendation["evidence_sources"]}
+    assert "香蕉 库存记录" in source_titles
+    assert "香蕉 保存建议" in source_titles
+    assert "USDA FoodKeeper" in source_names
+    assert "USDA FoodData Central" in source_names
+
+
+def test_advice_context_evidence_hints_skip_profile_avoided_food() -> None:
+    with TestClient(app) as client:
+        client.patch("/profile", json={"avoid_foods": ["banana"]})
+        client.post("/recognitions", json=_recognition_payload(counts={"banana": 1, "pear": 1}))
+        for item in client.get("/inventory").json():
+            client.post(f"/inventory/{item['id']}/confirm-change", json={})
+
+    with Session(engine) as session:
+        context = build_advice_context(session, "今天 香蕉 梨 哪些不用买")
+
+    blocked_hints = [
+        hint
+        for hint in context["evidence_hints"]
+        if hint["food"] == "banana"
+        and hint["action_type"] in {"eat_first", "avoid_duplicate_purchase"}
+    ]
+    assert blocked_hints == []
+    assert any(
+        hint["food"] == "pear" and hint["action_type"] == "eat_first"
+        for hint in context["evidence_hints"]
+    )
+
+
 def test_advice_llm_retries_once_with_errors_and_evidence_hints(monkeypatch) -> None:
     calls = []
 
@@ -459,7 +590,7 @@ def test_advice_llm_retries_once_with_errors_and_evidence_hints(monkeypatch) -> 
     assert len(calls) == 2
     retry_payload = json.loads(calls[1]["user_prompt"].split("\n\n", 1)[1])
     assert "上次输出的校验错误" in retry_payload
-    assert any("eat_first requires" in error for error in retry_payload["上次输出的校验错误"])
+    assert not any("eat_first requires" in error for error in retry_payload["上次输出的校验错误"])
     assert any("recommends buying stocked food" in error for error in retry_payload["上次输出的校验错误"])
     assert retry_payload["推荐 evidence_hints"]
 

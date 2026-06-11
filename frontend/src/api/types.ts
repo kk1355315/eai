@@ -34,6 +34,14 @@ export type AdviceActionType =
 
 export type AdviceConfidence = "low" | "medium" | "high";
 
+export interface EvidenceSource {
+  type: string;
+  title: string;
+  source: string;
+  summary: string;
+  url?: string | null;
+}
+
 export interface FoodSummary {
   id: number;
   model_label: string;
@@ -86,6 +94,7 @@ export interface AdviceItem {
   related_foods: string[];
   basis: string[];
   evidence_ids: string[];
+  evidence_sources?: EvidenceSource[];
   confidence: AdviceConfidence;
 }
 

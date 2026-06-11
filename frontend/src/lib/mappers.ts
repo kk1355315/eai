@@ -303,7 +303,26 @@ function toAdviceItem(raw: unknown): AdviceItem | null {
         ? [String(basis)]
         : [],
     evidence_ids: asArray(item.evidence_ids ?? item.evidenceIds).map(String),
+    evidence_sources: asArray(item.evidence_sources ?? item.evidenceSources)
+      .map(toEvidenceSource)
+      .filter((source): source is NonNullable<AdviceItem["evidence_sources"]>[number] => source !== null),
     confidence: (item.confidence ?? "medium") as AdviceItem["confidence"],
+  };
+}
+
+function toEvidenceSource(raw: unknown): NonNullable<AdviceItem["evidence_sources"]>[number] | null {
+  const source = asRecord(raw);
+  const title = source.title;
+  const summary = source.summary;
+  if (typeof title !== "string" || typeof summary !== "string") {
+    return null;
+  }
+  return {
+    type: typeof source.type === "string" ? source.type : "source",
+    title,
+    source: typeof source.source === "string" ? source.source : title,
+    summary,
+    url: typeof source.url === "string" ? source.url : null,
   };
 }
 

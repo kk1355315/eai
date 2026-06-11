@@ -6,6 +6,7 @@ frontend/tmp-chrome*/
 frontend/tmp-edge*/
 frontend/pixel-shots/
 frontend/dev-server.*.log
+.local-run-logs/
 __pycache__/
 *.py[cod]
 .pytest_cache/

@@ -13,6 +13,12 @@ export type AdviceItem = {
   relatedFoods?: string[] | null;
   basis?: string[] | string | null;
   evidenceIds?: Array<string | number> | null;
+  evidenceSources?: Array<{
+    title?: string | null;
+    source?: string | null;
+    summary?: string | null;
+    url?: string | null;
+  }> | null;
   confidence?: number | string | null;
 };
 
@@ -94,6 +100,28 @@ const styles = {
     fontSize: 17,
     lineHeight: 1.55,
   },
+  sourceList: {
+    display: "grid",
+    gap: 8,
+    margin: 0,
+    padding: 0,
+    listStyle: "none",
+  },
+  sourceItem: {
+    display: "grid",
+    gap: 3,
+  },
+  sourceTitle: {
+    color: "#07152f",
+    fontWeight: 760,
+    textDecoration: "none",
+  },
+  sourceMeta: {
+    margin: 0,
+    color: "#8a98b3",
+    fontSize: 13,
+    lineHeight: 1.35,
+  },
 } satisfies Record<string, CSSProperties>;
 
 function confidenceCopy(confidence?: number | string | null) {
@@ -113,6 +141,9 @@ export function AdviceCard({ item, tone = "ai", variant = "card" }: AdviceCardPr
     : item.basis
       ? [item.basis]
       : [];
+  const evidenceSources = item.evidenceSources?.filter(
+    (source) => source.title || source.summary,
+  ) ?? [];
 
   const content = (
     <>
@@ -136,7 +167,7 @@ export function AdviceCard({ item, tone = "ai", variant = "card" }: AdviceCardPr
           </span>
         ))}
       </div>
-      {basis.length || item.evidenceIds?.length ? (
+      {basis.length || evidenceSources.length ? (
         <div style={styles.evidence}>
           {basis.length ? (
             <>
@@ -144,10 +175,28 @@ export function AdviceCard({ item, tone = "ai", variant = "card" }: AdviceCardPr
               <p style={styles.evidenceText}>{basis.join("；")}</p>
             </>
           ) : null}
-          {item.evidenceIds?.length ? (
+          {evidenceSources.length ? (
             <>
-              <p style={styles.evidenceTitle}>Evidence IDs</p>
-              <p style={styles.evidenceText}>{item.evidenceIds.join(", ")}</p>
+              <p style={styles.evidenceTitle}>来源</p>
+              <ul style={styles.sourceList}>
+                {evidenceSources.map((source, index) => (
+                  <li key={`${source.title ?? "source"}-${index}`} style={styles.sourceItem}>
+                    {source.url ? (
+                      <a href={source.url} target="_blank" rel="noreferrer" style={styles.sourceTitle}>
+                        {source.title}
+                      </a>
+                    ) : (
+                      <span style={styles.sourceTitle}>{source.title}</span>
+                    )}
+                    {source.source ? (
+                      <p style={styles.sourceMeta}>{source.source}</p>
+                    ) : null}
+                    {source.summary ? (
+                      <p style={styles.evidenceText}>{source.summary}</p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
             </>
           ) : null}
         </div>
