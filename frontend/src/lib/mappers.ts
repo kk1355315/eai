@@ -178,14 +178,14 @@ export function buildHomeFruitData(
     .map(mapInventoryHomeFruit)
     .filter((item): item is HomeFruitViewModel => item !== null)
     .sort((a, b) => (a.remainingDays ?? 99) - (b.remainingDays ?? 99));
-  const priority = todayPriorityFruits.length
-    ? todayPriorityFruits
-    : fallbackPriority;
+  const priority = uniqueRecommendableHomeFruit(
+    todayPriorityFruits.length ? todayPriorityFruits : fallbackPriority,
+  );
   const needCheck = needCheckFromAdvice;
 
   return {
     recommended: priority[0],
-    priority: priority.slice(0, 4),
+    priority,
     needCheck: needCheck.slice(0, 4),
     hasAnyFruit:
       inventoryFruits.length > 0 ||
@@ -378,7 +378,22 @@ function mapTodayAdviceHomeFruit(
 }
 
 function canRecommendHomeFruit(item: HomeFruitViewModel): boolean {
-  return item.storageState === null || isRecommendableStorageState(item.storageState);
+  return isRecommendableStorageState(item.storageState);
+}
+
+function uniqueRecommendableHomeFruit(items: HomeFruitViewModel[]): HomeFruitViewModel[] {
+  const seenFoods = new Set<SupportedFoodLabel>();
+  const result: HomeFruitViewModel[] = [];
+
+  for (const item of items) {
+    if (seenFoods.has(item.modelLabel) || !canRecommendHomeFruit(item)) {
+      continue;
+    }
+    seenFoods.add(item.modelLabel);
+    result.push(item);
+  }
+
+  return result;
 }
 
 function isRecommendableStorageState(

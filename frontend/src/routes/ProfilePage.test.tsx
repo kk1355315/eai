@@ -85,7 +85,7 @@ describe("ProfilePage", () => {
     expect(screen.getByText("Updated 2026-06-11 02:52:27")).toBeTruthy();
   });
 
-  it("saves editable profile fields to PATCH payload shape", async () => {
+  it("saves only the active profile field to PATCH payload shape", async () => {
     const mutate = vi.fn();
     mockUsePatchProfile.mockReturnValue({
       error: null,
@@ -102,37 +102,18 @@ describe("ProfilePage", () => {
 
     renderWithProviders(<ProfilePage />);
 
-    fireEvent.click(screen.getByRole("button", { name: /edit profile section health goals/i }));
+    fireEvent.click(screen.getByRole("button", { name: /edit profile section goal/i }));
     fireEvent.change(
       screen.getByPlaceholderText("Eat fruit before it loses freshness"),
       { target: { value: "  Eat pears first  " } },
     );
-    fireEvent.change(
-      screen.getByPlaceholderText("Light, low sugar, fruit first"),
-      { target: { value: "  low sugar  " } },
-    );
-    fireEvent.change(
-      screen.getByPlaceholderText("No oven, simple washing and slicing"),
-      { target: { value: "  no oven  " } },
-    );
-    fireEvent.change(screen.getAllByPlaceholderText("Optional")[0], {
-      target: { value: "   " },
-    });
-    fireEvent.change(screen.getAllByPlaceholderText("Optional")[1], {
-      target: { value: "  avoid late snacks  " },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "香蕉" }));
+
     fireEvent.click(screen.getByRole("button", { name: /save profile/i }));
 
     await waitFor(() => {
       expect(mutate).toHaveBeenCalledWith(
         {
           goal: "Eat pears first",
-          diet_preference: "low sugar",
-          cooking_condition: "no oven",
-          avoid_foods: ["apple", "banana"],
-          allergies_optional: null,
-          health_notes_optional: "avoid late snacks",
         },
         expect.objectContaining({
           onSuccess: expect.any(Function),
@@ -153,7 +134,7 @@ describe("ProfilePage", () => {
 
     const { rerender } = renderWithProviders(<ProfilePage />);
 
-    fireEvent.click(screen.getByRole("button", { name: /edit profile section health goals/i }));
+    fireEvent.click(screen.getByRole("button", { name: /edit profile section goal/i }));
     fireEvent.change(
       screen.getByPlaceholderText("Eat fruit before it loses freshness"),
       { target: { value: "Draft goal that is not saved yet" } },
@@ -192,14 +173,40 @@ describe("ProfilePage", () => {
 
     const { queryClient } = renderWithProviders(<ProfilePage />);
 
-    fireEvent.click(screen.getByRole("button", { name: /edit profile section health goals/i }));
-    expect(screen.getByLabelText("Edit profile")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /edit profile section goal/i }));
+    expect(screen.getByLabelText("Edit profile Goal")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: /save profile/i }));
 
     await waitFor(() => {
-      expect(screen.queryByLabelText("Edit profile")).toBeNull();
+      expect(screen.queryByLabelText("Edit profile Goal")).toBeNull();
     });
     expect(queryClient.getQueryData(profileQueryKey)).toEqual(savedProfile);
+  });
+
+  it("opens only the clicked inline editor and toggles it closed", () => {
+    mockUseProfile.mockReturnValue({
+      data: profile(),
+      error: null,
+      isError: false,
+      isLoading: false,
+      refetch: vi.fn(),
+    } as never);
+
+    renderWithProviders(<ProfilePage />);
+
+    const goalRow = screen.getByRole("button", { name: /edit profile section goal/i });
+    const dietRow = screen.getByRole("button", { name: /edit profile section diet preference/i });
+
+    fireEvent.click(goalRow);
+    expect(screen.getByLabelText("Edit profile Goal")).toBeTruthy();
+    expect(screen.queryByLabelText("Edit profile Diet Preference")).toBeNull();
+
+    fireEvent.click(dietRow);
+    expect(screen.queryByLabelText("Edit profile Goal")).toBeNull();
+    expect(screen.getByLabelText("Edit profile Diet Preference")).toBeTruthy();
+
+    fireEvent.click(dietRow);
+    expect(screen.queryByLabelText("Edit profile Diet Preference")).toBeNull();
   });
 });

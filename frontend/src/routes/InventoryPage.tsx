@@ -87,6 +87,7 @@ function toPanelItem(item: ApiInventoryItem): InventoryItem {
     source_event_id: item.source_event_id,
     pending_change_type: normalizePendingChange(item.pending_change_type),
     pending_detected_quantity: item.pending_detected_quantity,
+    check_snoozed_until: item.check_snoozed_until,
     status: normalizeInventoryStatus(item.status),
     message: item.message,
   };

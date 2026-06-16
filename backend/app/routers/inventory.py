@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -55,6 +55,7 @@ class InventoryResponse(BaseModel):
     source_event_id: int | None
     pending_change_type: str
     pending_detected_quantity: int | None
+    check_snoozed_until: datetime | None = None
     message: str | None = None
 
 
@@ -70,6 +71,7 @@ class ConfirmChangeRequest(BaseModel):
     new_quantity: int | None = Field(default=None, ge=0)
     status: InventoryStatus | None = "available"
     as_new_batch: bool = False
+    snooze_days: int | None = Field(default=None, ge=1, le=30)
 
 
 @router.get("/inventory", response_model=list[InventoryResponse])
@@ -211,6 +213,10 @@ def confirm_inventory_change(
     item.pending_detected_quantity = None
     item.updated_at = utc_now()
     _apply_storage_state(session, item)
+    if payload.snooze_days is not None:
+        item.check_snoozed_until = item.updated_at + timedelta(days=payload.snooze_days)
+    else:
+        item.check_snoozed_until = None
     session.add(item)
     _record_inventory_truth_change(
         session=session,
@@ -323,6 +329,7 @@ def _refresh_storage_states(session: Session, items: list[InventoryItem]) -> Non
             and item.status == "available"
             and item.confirmed_quantity > 0
             and item.storage_state == "check_required"
+            and not _is_check_snoozed(item)
         ):
             record_check_required_once(
                 session,
@@ -456,7 +463,14 @@ def _record_inventory_truth_change(
 
 
 def _serialize_inventory(item: InventoryItem, food: FoodItem) -> InventoryResponse:
+    storage_state = item.storage_state
+    remaining_days = item.remaining_days
     message = CHECK_REQUIRED_MESSAGE if item.storage_state == "check_required" else None
+    if _is_check_snoozed(item):
+        storage_state = "eat_soon"
+        remaining_days = _days_until(item.check_snoozed_until)
+        message = None
+
     return InventoryResponse(
         id=item.id or 0,
         evidence_id=item.evidence_id,
@@ -476,13 +490,14 @@ def _serialize_inventory(item: InventoryItem, food: FoodItem) -> InventoryRespon
         created_at=item.created_at,
         days_stored=item.days_stored,
         safe_days=item.safe_days,
-        remaining_days=item.remaining_days,
-        storage_state=item.storage_state,
+        remaining_days=remaining_days,
+        storage_state=storage_state,
         eat_priority_rank=item.eat_priority_rank,
         status=item.status,
         source_event_id=item.source_event_id,
         pending_change_type=item.pending_change_type,
         pending_detected_quantity=item.pending_detected_quantity,
+        check_snoozed_until=item.check_snoozed_until,
         message=message,
     )
 
@@ -495,3 +510,18 @@ def _as_utc(value: datetime) -> datetime:
     if value.tzinfo is None:
         return value.replace(tzinfo=timezone.utc)
     return value.astimezone(timezone.utc)
+
+
+def _is_check_snoozed(item: InventoryItem, as_of: datetime | None = None) -> bool:
+    if item.check_snoozed_until is None:
+        return False
+    return _as_utc(item.check_snoozed_until) > _as_utc(as_of or utc_now())
+
+
+def _days_until(value: datetime | None) -> int | None:
+    if value is None:
+        return None
+    seconds = (_as_utc(value) - utc_now()).total_seconds()
+    if seconds <= 0:
+        return 0
+    return max(1, int((seconds + 86399) // 86400))

@@ -70,7 +70,7 @@ describe("advice api", () => {
       today_priority: [{ food: "apple" }],
       check_required: [{ food: "pear" }],
     });
-    expect(fetchMock.mock.calls[0][0]).toBe("http://eai.744477.xyz/api/advice/today");
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/advice/today");
   });
 
   it("fetches shopping advice and drops non-general unsupported recommendations", async () => {
@@ -102,7 +102,7 @@ describe("advice api", () => {
     await expect(fetchShoppingAdvice()).resolves.toEqual({
       recommendations: [{ ...payload.recommendations[0], related_foods: ["banana"] }],
     });
-    expect(fetchMock.mock.calls[0][0]).toBe("http://eai.744477.xyz/api/advice/shopping");
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/advice/shopping");
   });
 
   it("posts LLM request, filters recommendations, and keeps accepted=false", async () => {
@@ -150,7 +150,7 @@ describe("advice api", () => {
     });
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("http://eai.744477.xyz/api/advice/llm/generate");
+    expect(url).toBe("/api/advice/llm/generate");
     expect(init.method).toBe("POST");
     expect(init.body).toBe(
       JSON.stringify({ question: "What should I eat?", enable_thinking: false }),
@@ -168,7 +168,7 @@ describe("advice api", () => {
       results: [{ id: "evidence-1" }],
     });
     expect(fetchMock.mock.calls[0][0]).toBe(
-      "http://eai.744477.xyz/api/advice/evidence-search?query=ripe+pear",
+      "/api/advice/evidence-search?query=ripe+pear",
     );
   });
 });

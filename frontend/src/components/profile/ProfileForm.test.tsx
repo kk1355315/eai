@@ -63,4 +63,22 @@ describe("ProfileForm", () => {
       avoid_foods: ["pear"],
     });
   });
+
+  it("renders profile editing copy in Chinese", () => {
+    renderWithProviders(
+      <ProfileForm
+        value={emptyProfile}
+        onChange={vi.fn()}
+        onSubmit={vi.fn()}
+      />,
+      { language: "zh" },
+    );
+
+    expect(screen.getByText("目标")).toBeTruthy();
+    expect(screen.getByText("饮食偏好")).toBeTruthy();
+    expect(screen.getByText("处理条件")).toBeTruthy();
+    expect(screen.getByText("避免食物")).toBeTruthy();
+    expect(screen.getByPlaceholderText("在水果失去新鲜度前吃完")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "保存资料" })).toBeTruthy();
+  });
 });

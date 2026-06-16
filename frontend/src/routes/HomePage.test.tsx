@@ -131,6 +131,155 @@ describe("HomePage", () => {
     expect(within(needCheck as HTMLElement).getByText("Pear")).toBeTruthy();
   });
 
+  it("uses compact Chinese copy for check-required fruit", () => {
+    renderWithProviders(<HomePage />, { language: "zh" });
+
+    const needCheck = screen.getByRole("heading", { name: "需要检查" }).closest("section");
+
+    expect(needCheck).toBeTruthy();
+    expect(within(needCheck as HTMLElement).getByText("梨")).toBeTruthy();
+    expect(within(needCheck as HTMLElement).getByText("已超过参考保存期")).toBeTruthy();
+  });
+
+  it("links pending confirmation notice to inventory", () => {
+    mockUseInventory.mockReturnValue(
+      queryResult([
+        {
+          id: 1,
+          food: { model_label: "banana", display_name: "Banana" },
+          confirmed_quantity: 2,
+          unit: "piece",
+          remaining_days: 1,
+          storage_state: "fresh",
+          status: "available",
+          pending_change_type: "possible_added",
+        },
+      ]),
+    );
+
+    renderWithProviders(<HomePage />, { language: "zh" });
+
+    expect(screen.getByRole("link", { name: /项需要确认/ })).toHaveAttribute(
+      "href",
+      "/inventory",
+    );
+  });
+
+  it("shows all priority fruit when more than two are recommended", () => {
+    mockUseTodayAdvice.mockReturnValue(
+      queryResult({
+        today_priority: [
+          {
+            food: "banana",
+            display_name: "Banana",
+            storage_state: "fresh",
+            days_stored: 1,
+            safe_days: 3,
+            remaining_days: 0,
+            eat_priority_rank: 1,
+            basis: ["Banana should be used today."],
+            evidence_ids: ["inventory_1"],
+          },
+          {
+            food: "litchi",
+            display_name: "Litchi",
+            storage_state: "fresh",
+            days_stored: 1,
+            safe_days: 3,
+            remaining_days: 1,
+            eat_priority_rank: 2,
+            basis: ["Litchi is next."],
+            evidence_ids: ["inventory_2"],
+          },
+          {
+            food: "apple",
+            display_name: "Apple",
+            storage_state: "eat_soon",
+            days_stored: 2,
+            safe_days: 4,
+            remaining_days: 2,
+            eat_priority_rank: 3,
+            basis: ["Apple should still be visible."],
+            evidence_ids: ["inventory_3"],
+          },
+        ],
+        check_required: [],
+      }),
+    );
+
+    renderWithProviders(<HomePage />);
+
+    const priority = screen.getByRole("heading", { name: "Today's priority" }).closest("section");
+
+    expect(priority).toBeTruthy();
+    expect(within(priority as HTMLElement).getByText("Banana")).toBeTruthy();
+    expect(within(priority as HTMLElement).getByText("Litchi")).toBeTruthy();
+    expect(within(priority as HTMLElement).getByText("Apple")).toBeTruthy();
+  });
+
+  it("deduplicates priority fruit and only keeps edible states", () => {
+    mockUseTodayAdvice.mockReturnValue(
+      queryResult({
+        today_priority: [
+          {
+            food: "banana",
+            display_name: "Banana",
+            storage_state: "fresh",
+            days_stored: 1,
+            safe_days: 3,
+            remaining_days: 0,
+            eat_priority_rank: 1,
+            basis: ["Banana should be used today."],
+            evidence_ids: ["inventory_1"],
+          },
+          {
+            food: "banana",
+            display_name: "Banana",
+            storage_state: "eat_soon",
+            days_stored: 1,
+            safe_days: 3,
+            remaining_days: 1,
+            eat_priority_rank: 2,
+            basis: ["Duplicate banana should be hidden."],
+            evidence_ids: ["inventory_2"],
+          },
+          {
+            food: "pear",
+            display_name: "Pear",
+            storage_state: "not_recommended",
+            days_stored: 5,
+            safe_days: 3,
+            remaining_days: -2,
+            eat_priority_rank: null,
+            basis: ["Pear is not edible."],
+            evidence_ids: ["inventory_3"],
+          },
+          {
+            food: "apple",
+            display_name: "Apple",
+            storage_state: "eat_soon",
+            days_stored: 2,
+            safe_days: 4,
+            remaining_days: 1,
+            eat_priority_rank: 3,
+            basis: ["Apple should stay visible."],
+            evidence_ids: ["inventory_4"],
+          },
+        ],
+        check_required: [],
+      }),
+    );
+
+    renderWithProviders(<HomePage />);
+
+    const priority = screen.getByRole("heading", { name: "Today's priority" }).closest("section");
+
+    expect(priority).toBeTruthy();
+    expect(within(priority as HTMLElement).getAllByText("Banana")).toHaveLength(1);
+    expect(within(priority as HTMLElement).getByText("Apple")).toBeTruthy();
+    expect(within(priority as HTMLElement).queryByText("Pear")).toBeNull();
+  });
+
   it("shows an error instead of static preview fruit when API calls fail", () => {
     mockUseTodayAdvice.mockReturnValue(errorResult());
     mockUseInventory.mockReturnValue(errorResult());

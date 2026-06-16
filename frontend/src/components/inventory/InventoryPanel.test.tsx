@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../test/test-utils";
 import { InventoryPanel, type InventoryItem } from "./InventoryPanel";
@@ -60,11 +60,49 @@ describe("InventoryPanel", () => {
 
     const list = screen.getByLabelText("Inventory");
     expect(within(list).getByText("苹果")).toBeTruthy();
-    expect(within(list).getByText("2 piece")).toBeTruthy();
+    expect(within(list).getByText("2 pieces")).toBeTruthy();
     expect(within(list).queryByText("Vegetables")).toBeNull();
   });
 
-  it("renders readable inventory facts and confirm-change controls", () => {
+  it("hides zero-quantity inventory even when it has a pending change", () => {
+    renderInventory([
+      inventoryItem({ id: 11, confirmed_quantity: 0 }),
+      inventoryItem({
+        id: 12,
+        confirmed_quantity: 0,
+        pending_change_type: "possible_consumed",
+        pending_detected_quantity: 0,
+        status: "pending_confirm",
+      }),
+    ]);
+
+    expect(screen.getByLabelText("Check")).toBeTruthy();
+    expect(screen.queryByText("苹果")).toBeNull();
+    expect(screen.queryByText("0 pieces")).toBeNull();
+  });
+
+  it("renders summary and controls in Chinese", () => {
+    renderWithProviders(
+      <InventoryPanel
+        items={[inventoryItem({ unit: "piece" })]}
+        onConfirmChange={vi.fn()}
+        onCreateUserFoodEvent={vi.fn()}
+        onPatchInventory={vi.fn()}
+      />,
+      { language: "zh" },
+    );
+
+    const summary = screen.getByLabelText("库存概览");
+    expect(within(summary).getByText("总数")).toBeTruthy();
+    expect(within(summary).getByText("新鲜")).toBeTruthy();
+    expect(within(summary).getByText("临期")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "更改" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "确认" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "已食用" })).toBeNull();
+    expect(screen.getByText("2 个")).toBeTruthy();
+  });
+
+  it("renders pending and check-required items expanded in the check section", () => {
     const onConfirmChange = vi.fn();
     renderInventory([
       inventoryItem({
@@ -72,65 +110,62 @@ describe("InventoryPanel", () => {
         pending_change_type: "possible_added",
         pending_detected_quantity: 5,
         status: "pending_confirm",
+      }),
+      inventoryItem({
+        id: 12,
+        food: { id: 2, model_label: "banana", display_name: "Banana" },
+        pending_change_type: "none",
+        storage_state: "check_required",
+        remaining_days: -2,
+        status: "available",
       }),
     ], { onConfirmChange });
 
     expect(screen.getAllByText("Pantry").length).toBeGreaterThan(0);
     expect(screen.getByText("3 days left")).toBeTruthy();
-    expect(screen.getByText(/Seen 2026-06-04 12:00/)).toBeTruthy();
+    expect(screen.getAllByText(/Seen 2026-06-04 12:00/).length).toBeGreaterThan(0);
     expect(screen.getByText("Possibly added")).toBeTruthy();
     expect(screen.queryByText("evidence_id")).toBeNull();
     expect(screen.queryByText("camera_id")).toBeNull();
     expect(screen.queryByText("pending_detected_quantity")).toBeNull();
-    expect(screen.getByRole("button", { name: /confirm/i })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /new batch/i })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /ate/i })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /tossed/i })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /bought/i })).toBeTruthy();
-    expect(screen.getByRole("spinbutton")).toBeTruthy();
-    expect(screen.getByRole("combobox", { name: /storage location/i })).toBeTruthy();
+    expect(screen.getByText("香蕉")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /edit/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /confirm/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /new batch/i })).toBeNull();
+    expect(screen.getAllByRole("button", { name: /ate/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /tossed/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /keep a few days/i }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: /bought/i })).toBeNull();
+    expect(screen.getAllByRole("spinbutton").length).toBeGreaterThan(0);
+    expect(screen.queryByRole("combobox", { name: /storage location/i })).toBeNull();
   });
 
-  it("uses pending_detected_quantity as the default confirm quantity", () => {
+  it("snoozes a check item with selected days", async () => {
     const onConfirmChange = vi.fn();
     renderInventory([
       inventoryItem({
         id: 11,
-        confirmed_quantity: 0,
-        pending_change_type: "new_quantity",
-        pending_detected_quantity: 1,
-        status: "pending_confirm",
+        confirmed_quantity: 3,
+        remaining_days: -1,
+        storage_state: "check_required",
       }),
     ], { onConfirmChange });
 
-    expect(screen.getByRole("spinbutton")).toHaveAttribute("placeholder", "1");
+    fireEvent.click(screen.getByRole("button", { name: /keep a few days/i }));
+    fireEvent.change(screen.getByRole("combobox", { name: /remind again in/i }), {
+      target: { value: "5" },
+    });
     fireEvent.click(screen.getByRole("button", { name: /confirm/i }));
 
     expect(onConfirmChange).toHaveBeenCalledWith(11, {
-      new_quantity: 1,
+      new_quantity: 3,
       status: "available",
       as_new_batch: false,
+      snooze_days: 5,
     });
-  });
-
-  it("can confirm possible additions as a new batch", () => {
-    const onConfirmChange = vi.fn();
-    renderInventory([
-      inventoryItem({
-        id: 11,
-        confirmed_quantity: 2,
-        pending_change_type: "possible_added",
-        pending_detected_quantity: 5,
-        status: "pending_confirm",
-      }),
-    ], { onConfirmChange });
-
-    fireEvent.click(screen.getByRole("button", { name: /new batch/i }));
-
-    expect(onConfirmChange).toHaveBeenCalledWith(11, {
-      new_quantity: 5,
-      status: "available",
-      as_new_batch: true,
+    await waitFor(() => {
+      expect(within(screen.getByLabelText("Check")).queryByText("苹果")).toBeNull();
+      expect(within(screen.getByLabelText("Inventory")).getByText("苹果")).toBeTruthy();
     });
   });
 
@@ -138,6 +173,10 @@ describe("InventoryPanel", () => {
     const onCreateUserFoodEvent = vi.fn();
     renderInventory([inventoryItem({ id: 11 })], { onCreateUserFoodEvent });
 
+    fireEvent.click(screen.getByRole("button", { name: /edit/i }));
+    fireEvent.change(screen.getByLabelText(/event quantity/i), {
+      target: { value: "2" },
+    });
     fireEvent.click(screen.getByRole("button", { name: /ate/i }));
     fireEvent.click(screen.getByRole("button", { name: /tossed/i }));
     fireEvent.click(screen.getByRole("button", { name: /bought/i }));
@@ -145,19 +184,43 @@ describe("InventoryPanel", () => {
     expect(onCreateUserFoodEvent).toHaveBeenNthCalledWith(1, {
       food_id: "apple",
       event_type: "consumed",
-      quantity: 1,
+      quantity: 2,
       inventory_id: 11,
     });
     expect(onCreateUserFoodEvent).toHaveBeenNthCalledWith(2, {
       food_id: "apple",
       event_type: "discarded",
-      quantity: 1,
+      quantity: 2,
       inventory_id: 11,
     });
     expect(onCreateUserFoodEvent).toHaveBeenNthCalledWith(3, {
       food_id: "apple",
       event_type: "purchased",
-      quantity: 1,
+      quantity: 2,
+      inventory_id: 11,
+    });
+  });
+
+  it("uses custom event quantity in the check section", () => {
+    const onCreateUserFoodEvent = vi.fn();
+    renderInventory([
+      inventoryItem({
+        id: 11,
+        confirmed_quantity: 3,
+        remaining_days: -2,
+        storage_state: "check_required",
+      }),
+    ], { onCreateUserFoodEvent });
+
+    fireEvent.change(screen.getByLabelText(/event quantity/i), {
+      target: { value: "2" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /ate/i }));
+
+    expect(onCreateUserFoodEvent).toHaveBeenCalledWith({
+      food_id: "apple",
+      event_type: "consumed",
+      quantity: 2,
       inventory_id: 11,
     });
   });
@@ -166,6 +229,7 @@ describe("InventoryPanel", () => {
     const onPatchInventory = vi.fn();
     renderInventory([inventoryItem({ id: 11 })], { onPatchInventory });
 
+    fireEvent.click(screen.getByRole("button", { name: /edit/i }));
     fireEvent.change(screen.getByRole("combobox", { name: /storage location/i }), {
       target: { value: "freeze" },
     });
@@ -173,6 +237,19 @@ describe("InventoryPanel", () => {
     expect(onPatchInventory).toHaveBeenCalledWith(11, {
       storage_location: "freeze",
     });
+  });
+
+  it("collapses edit controls after submitting a change", async () => {
+    const onCreateUserFoodEvent = vi.fn();
+    renderInventory([inventoryItem({ id: 11 })], { onCreateUserFoodEvent });
+
+    fireEvent.click(screen.getByRole("button", { name: /edit/i }));
+    fireEvent.click(screen.getByRole("button", { name: /tossed/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /edit/i })).toBeTruthy();
+    });
+    expect(screen.queryByRole("button", { name: /tossed/i })).toBeNull();
   });
 
   it("does not recommend eating not_recommended inventory", () => {

@@ -170,6 +170,7 @@ class InventoryItem(SQLModel, table=True):
     source_event_id: int | None = Field(default=None, foreign_key="recognition_events.id", index=True)
     pending_change_type: str = Field(default="none", index=True)
     pending_detected_quantity: int | None = None
+    check_snoozed_until: datetime | None = Field(default=None, index=True)
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
 

@@ -55,6 +55,7 @@ export type InventoryItem = {
   source_event_id?: number | null;
   pending_change_type: PendingChangeType;
   pending_detected_quantity?: number | null;
+  check_snoozed_until?: string | null;
   status: InventoryStatus;
   message?: string | null;
 };
@@ -69,6 +70,7 @@ export type ConfirmInventoryChange = {
   new_quantity?: number;
   status?: InventoryStatus;
   as_new_batch?: boolean;
+  snooze_days?: number;
 };
 
 export type FoodEventType = "consumed" | "discarded" | "purchased";
@@ -118,6 +120,11 @@ export function InventoryPanel({
 }: InventoryPanelProps) {
   const { t } = useLanguage();
   const [quantityDrafts, setQuantityDrafts] = useState<Record<number, string>>({});
+  const [eventQuantityDrafts, setEventQuantityDrafts] = useState<Record<number, string>>({});
+  const [expandedItemIds, setExpandedItemIds] = useState<Set<number>>(() => new Set());
+  const [snoozeDrafts, setSnoozeDrafts] = useState<Record<number, string>>({});
+  const [openSnoozeItemIds, setOpenSnoozeItemIds] = useState<Set<number>>(() => new Set());
+  const [locallySnoozedItems, setLocallySnoozedItems] = useState<Record<number, number>>({});
 
   if (loading) {
     return <StateCard title={t("loadingInventory")} copy={t("checkingLatestFruitBatches")} />;
@@ -127,8 +134,13 @@ export function InventoryPanel({
     return <StateCard title={t("inventoryIsOffline")} copy={error} onRetry={onRetry} />;
   }
 
-  const visibleItems = items.filter((item) => item.status !== "consumed" && item.status !== "discarded");
-  const rows = visibleItems.map(toInventoryRow);
+  const visibleItems = items
+    .filter(shouldShowInventoryItem)
+    .map((item) => applyLocalSnooze(item, locallySnoozedItems[item.id]));
+  const pendingItems = visibleItems.filter(needsInventoryConfirmation);
+  const regularItems = visibleItems.filter((item) => !needsInventoryConfirmation(item));
+  const pendingRows = pendingItems.map((item) => toInventoryRow(item, t));
+  const regularRows = regularItems.map((item) => toInventoryRow(item, t));
   const totalQuantity = visibleItems.reduce((total, item) => total + item.confirmed_quantity, 0);
   const freshCount = visibleItems.filter((item) => item.storage_state === "fresh").length;
   const expiringCount = visibleItems.filter((item) =>
@@ -136,21 +148,175 @@ export function InventoryPanel({
     item.storage_state === "check_required" ||
     item.storage_state === "not_recommended",
   ).length;
+  const collapseItemControls = (itemId: number) => {
+    setExpandedItemIds((current) => {
+      if (!current.has(itemId)) return current;
+      const next = new Set(current);
+      next.delete(itemId);
+      return next;
+    });
+  };
+  const toggleItemControls = (itemId: number) => {
+    setExpandedItemIds((current) => {
+      const next = new Set(current);
+      if (next.has(itemId)) {
+        next.delete(itemId);
+      } else {
+        next.add(itemId);
+      }
+      return next;
+    });
+  };
+  const runItemAction = (itemId: number, action: () => Promise<void> | void) => {
+    void Promise.resolve(action()).finally(() => {
+      collapseItemControls(itemId);
+      closeSnoozeControls(itemId);
+    });
+  };
+  const closeSnoozeControls = (itemId: number) => {
+    setOpenSnoozeItemIds((current) => {
+      if (!current.has(itemId)) return current;
+      const next = new Set(current);
+      next.delete(itemId);
+      return next;
+    });
+  };
+  const toggleSnoozeControls = (itemId: number) => {
+    setOpenSnoozeItemIds((current) => {
+      const next = new Set(current);
+      if (next.has(itemId)) {
+        next.delete(itemId);
+      } else {
+        next.add(itemId);
+      }
+      return next;
+    });
+  };
+  const readEventQuantity = (
+    itemId: number,
+    sourceItem: InventoryItem,
+    eventType: FoodEventType,
+  ) => {
+    const rawQuantity = eventQuantityDrafts[itemId];
+    const parsedQuantity =
+      rawQuantity === undefined || rawQuantity.trim() === "" ? 1 : Number(rawQuantity);
+    const quantity = Number.isFinite(parsedQuantity) && parsedQuantity > 0
+      ? Math.floor(parsedQuantity)
+      : 1;
+
+    if (eventType === "purchased") {
+      return quantity;
+    }
+
+    return Math.min(quantity, sourceItem.confirmed_quantity);
+  };
 
   return (
     <>
       <section className="inventory-summary-card" aria-label={t("inventorySummary")}>
-        <SummaryStat label="Total" value={totalQuantity} />
-        <SummaryStat label="Fresh" tone="fresh" value={freshCount} />
-        <SummaryStat label="Expiring" tone="expiring" value={expiringCount} />
+        <SummaryStat label={t("total")} value={totalQuantity} />
+        <SummaryStat label={t("fresh")} tone="fresh" value={freshCount} />
+        <SummaryStat label={t("expiring")} tone="expiring" value={expiringCount} />
+      </section>
+
+      <section className="inventory-list" aria-label={t("check")}>
+        <h2 className="inventory-list-title">{t("check")}</h2>
+        {pendingRows.length === 0 ? (
+          <p className="inventory-list-empty">{t("confirmInventoryFirst")}</p>
+        ) : null}
+        {pendingRows.map((item) => {
+          const sourceItem = pendingItems.find((source) => source.id === item.id);
+          const snoozeDraft = snoozeDrafts[item.id] ?? "3";
+          const readSnoozeDays = () => {
+            const nextDays = Number(snoozeDraft);
+            return Number.isFinite(nextDays) && nextDays > 0 ? nextDays : 3;
+          };
+
+          return (
+            <InventoryCategoryRow
+              busy={busyItemId === item.id}
+              controlsMode="check"
+              item={item}
+              key={item.id}
+              eventQuantityDraft={eventQuantityDrafts[item.id]}
+              quantityDraft={quantityDrafts[item.id]}
+              snoozeDaysDraft={snoozeDraft}
+              snoozeOpen={openSnoozeItemIds.has(item.id)}
+              source={sourceItem}
+              onCreateEvent={(eventType) => {
+                if (!sourceItem) return;
+
+                runItemAction(item.id, () =>
+                  onCreateUserFoodEvent({
+                    food_id: sourceItem.food.model_label,
+                    event_type: eventType,
+                    quantity: readEventQuantity(item.id, sourceItem, eventType),
+                    inventory_id: sourceItem.id,
+                  }),
+                );
+              }}
+              onEventQuantityChange={(event) =>
+                setEventQuantityDrafts((current) => ({
+                  ...current,
+                  [item.id]: event.target.value,
+                }))
+              }
+              onSnoozeDraftChange={(event) =>
+                setSnoozeDrafts((current) => ({
+                  ...current,
+                  [item.id]: event.target.value,
+                }))
+              }
+              onDraftChange={(event) =>
+                setQuantityDrafts((current) => ({
+                  ...current,
+                  [item.id]: event.target.value,
+                }))
+              }
+              onStorageChange={(storageLocation) => {
+                runItemAction(item.id, () =>
+                  onPatchInventory(item.id, { storage_location: storageLocation }),
+                );
+              }}
+              onConfirm={() => undefined}
+              onSnoozeCheck={() => {
+                if (!sourceItem) return;
+
+                runItemAction(item.id, () =>
+                  Promise.resolve(
+                    onConfirmChange(item.id, {
+                      new_quantity: sourceItem.confirmed_quantity,
+                      status: "available",
+                      as_new_batch: false,
+                      snooze_days: readSnoozeDays(),
+                    }),
+                  ).then(() => {
+                    setLocallySnoozedItems((current) => ({
+                      ...current,
+                      [item.id]: readSnoozeDays(),
+                    }));
+                  }),
+                );
+              }}
+              onToggleSnooze={() => {
+                toggleSnoozeControls(item.id);
+              }}
+              onToggleEdit={() => {
+                toggleItemControls(item.id);
+              }}
+            />
+          );
+        })}
       </section>
 
       <section className="inventory-list" aria-label={t("inventory")}>
-        {rows.length === 0 ? (
+        <h2 className="inventory-list-title">{t("inventory")}</h2>
+        {regularRows.length === 0 && pendingRows.length === 0 ? (
           <StateCard title={t("noFruitBatches")} copy={t("noFruitBatchesCopy")} />
         ) : null}
-        {rows.map((item) => {
-          const sourceItem = visibleItems.find((source) => source.id === item.id);
+        {regularRows.map((item) => {
+          const sourceItem = regularItems.find((source) => source.id === item.id);
+          const isExpanded = expandedItemIds.has(item.id);
           const readQuantity = () => {
               const rawQuantity = quantityDrafts[item.id];
               const nextQuantity =
@@ -164,20 +330,30 @@ export function InventoryPanel({
           return (
             <InventoryCategoryRow
               busy={busyItemId === item.id}
+              controlsMode={isExpanded ? "expanded" : "collapsed"}
               item={item}
               key={item.id}
+              eventQuantityDraft={eventQuantityDrafts[item.id]}
               quantityDraft={quantityDrafts[item.id]}
               source={sourceItem}
               onCreateEvent={(eventType) => {
                 if (!sourceItem) return;
 
-                void onCreateUserFoodEvent({
-                  food_id: sourceItem.food.model_label,
-                  event_type: eventType,
-                  quantity: 1,
-                  inventory_id: sourceItem.id,
-                });
+                runItemAction(item.id, () =>
+                  onCreateUserFoodEvent({
+                    food_id: sourceItem.food.model_label,
+                    event_type: eventType,
+                    quantity: readEventQuantity(item.id, sourceItem, eventType),
+                    inventory_id: sourceItem.id,
+                  }),
+                );
               }}
+              onEventQuantityChange={(event) =>
+                setEventQuantityDrafts((current) => ({
+                  ...current,
+                  [item.id]: event.target.value,
+                }))
+              }
               onDraftChange={(event) =>
                 setQuantityDrafts((current) => ({
                   ...current,
@@ -185,21 +361,30 @@ export function InventoryPanel({
                 }))
               }
               onStorageChange={(storageLocation) => {
-                void onPatchInventory(item.id, { storage_location: storageLocation });
+                runItemAction(item.id, () =>
+                  onPatchInventory(item.id, { storage_location: storageLocation }),
+                );
               }}
               onConfirm={() => {
-              void onConfirmChange(item.id, {
-                new_quantity: readQuantity(),
-                status: "available",
-                as_new_batch: false,
-              });
+                runItemAction(item.id, () =>
+                  onConfirmChange(item.id, {
+                    new_quantity: readQuantity(),
+                    status: "available",
+                    as_new_batch: false,
+                  }),
+                );
               }}
               onConfirmAsNewBatch={() => {
-                void onConfirmChange(item.id, {
-                  new_quantity: readQuantity(),
-                  status: "available",
-                  as_new_batch: true,
-                });
+                runItemAction(item.id, () =>
+                  onConfirmChange(item.id, {
+                    new_quantity: readQuantity(),
+                    status: "available",
+                    as_new_batch: true,
+                  }),
+                );
+              }}
+              onToggleEdit={() => {
+                toggleItemControls(item.id);
               }}
             />
           );
@@ -228,27 +413,45 @@ function SummaryStat({
 
 function InventoryCategoryRow({
   busy,
+  controlsMode,
+  eventQuantityDraft,
   item,
   onConfirm,
   onConfirmAsNewBatch,
   onCreateEvent,
   onDraftChange,
+  onEventQuantityChange,
   onStorageChange,
+  onSnoozeCheck,
+  onSnoozeDraftChange,
+  onToggleSnooze,
+  onToggleEdit,
   quantityDraft,
+  snoozeDaysDraft,
+  snoozeOpen,
   source,
 }: {
   busy: boolean;
+  controlsMode: "collapsed" | "expanded" | "check";
+  eventQuantityDraft?: string;
   item: InventoryRow;
   onConfirm: () => void;
-  onConfirmAsNewBatch: () => void;
+  onConfirmAsNewBatch?: () => void;
   onCreateEvent: (eventType: FoodEventType) => void;
   onDraftChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onEventQuantityChange?: (event: ChangeEvent<HTMLInputElement>) => void;
   onStorageChange: (storageLocation: "pantry" | "refrigerate" | "freeze") => void;
+  onSnoozeCheck?: () => void;
+  onSnoozeDraftChange?: (event: ChangeEvent<HTMLSelectElement>) => void;
+  onToggleSnooze?: () => void;
+  onToggleEdit?: () => void;
   quantityDraft?: string;
+  snoozeDaysDraft?: string;
+  snoozeOpen?: boolean;
   source?: InventoryItem;
 }) {
   const { t } = useLanguage();
-  const canCreateNewBatch = source?.pending_change_type === "possible_added";
+  const canCreateNewBatch = controlsMode === "expanded" && source?.pending_change_type === "possible_added";
 
   return (
     <article className="inventory-row">
@@ -281,7 +484,60 @@ function InventoryCategoryRow({
       <span className={`inventory-state-label state-text-${item.status}`}>
         {formatState(item.status, t)}
       </span>
-      <div className="inventory-confirm-controls">
+      <div className={`inventory-confirm-controls mode-${controlsMode}`}>
+        {controlsMode === "collapsed" ? (
+          <button disabled={busy} type="button" onClick={onToggleEdit}>
+            {t("patchInventory")}
+          </button>
+        ) : null}
+        {controlsMode === "check" ? (
+          <div className="inventory-check-actions">
+            <label className="inventory-event-quantity">
+              <span className="sr-only">{t("eventQuantity")}</span>
+              <input
+                min={1}
+                max={source?.confirmed_quantity}
+                type="number"
+                value={eventQuantityDraft ?? ""}
+                placeholder="1"
+                onChange={onEventQuantityChange}
+              />
+            </label>
+            <button disabled={busy || !source} type="button" onClick={() => onCreateEvent("consumed")}>
+              {t("ate")}
+            </button>
+            <button disabled={busy || !source} type="button" onClick={() => onCreateEvent("discarded")}>
+              {t("tossed")}
+            </button>
+            <button disabled={busy || !source} type="button" onClick={onToggleSnooze}>
+              {t("keepAFewDays")}
+            </button>
+            {snoozeOpen ? (
+              <div className="inventory-snooze-controls">
+                <label>
+                  <span className="sr-only">{t("remindAgainIn")}</span>
+                  <select
+                    aria-label={t("remindAgainIn")}
+                    disabled={busy}
+                    value={snoozeDaysDraft ?? "3"}
+                    onChange={onSnoozeDraftChange}
+                  >
+                    <option value="1">1 {t("dayUnit")}</option>
+                    <option value="2">2 {t("daysUnit")}</option>
+                    <option value="3">3 {t("daysUnit")}</option>
+                    <option value="5">5 {t("daysUnit")}</option>
+                    <option value="7">7 {t("daysUnit")}</option>
+                  </select>
+                </label>
+                <button disabled={busy || !source} type="button" onClick={onSnoozeCheck}>
+                  {t("confirm")}
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+        {controlsMode === "expanded" ? (
+          <>
         <label>
           <span className="sr-only">{t("newQuantity")}</span>
           <input
@@ -314,6 +570,17 @@ function InventoryCategoryRow({
           </button>
         ) : null}
         <div className="inventory-event-controls">
+          <label className="inventory-event-quantity">
+            <span className="sr-only">{t("eventQuantity")}</span>
+            <input
+              min={1}
+              max={source?.confirmed_quantity}
+              type="number"
+              value={eventQuantityDraft ?? ""}
+              placeholder="1"
+              onChange={onEventQuantityChange}
+            />
+          </label>
           <button disabled={busy || !source} type="button" onClick={() => onCreateEvent("consumed")}>
             {t("ate")}
           </button>
@@ -324,6 +591,8 @@ function InventoryCategoryRow({
             {t("bought")}
           </button>
         </div>
+          </>
+        ) : null}
       </div>
     </article>
   );
@@ -364,10 +633,13 @@ function formatState(
   return t("check");
 }
 
-function toInventoryRow(item: InventoryItem): InventoryRow {
+function toInventoryRow(
+  item: InventoryItem,
+  t: ReturnType<typeof useLanguage>["t"],
+): InventoryRow {
   const food = item.food.model_label;
   const isKnownFruit = isSupportedFoodLabel(food);
-  const quantityLabel = `${item.confirmed_quantity} ${item.unit || "items"}`;
+  const quantityLabel = `${item.confirmed_quantity} ${formatUnit(item.unit, t)}`;
 
   return {
     id: item.id,
@@ -409,7 +681,45 @@ function formatPendingChange(
   if (change === "new_quantity") return t("newQuantity");
   if (change === "possible_added") return t("possibleAdded");
   if (change === "possible_consumed") return t("possibleUsed");
-  return "Confirmed";
+  return t("confirmedQuantity");
+}
+
+function needsInventoryConfirmation(item: InventoryItem): boolean {
+  return (
+    item.status === "pending_confirm" ||
+    item.pending_change_type !== "none" ||
+    item.storage_state === "check_required" ||
+    item.storage_state === "not_recommended"
+  );
+}
+
+function shouldShowInventoryItem(item: InventoryItem): boolean {
+  if (item.status === "consumed" || item.status === "discarded") {
+    return false;
+  }
+  return item.confirmed_quantity > 0;
+}
+
+function applyLocalSnooze(item: InventoryItem, snoozeDays: number | undefined): InventoryItem {
+  if (snoozeDays === undefined) {
+    return item;
+  }
+
+  return {
+    ...item,
+    remaining_days: snoozeDays,
+    storage_state: "eat_soon",
+    status: "available",
+    pending_change_type: "none",
+    pending_detected_quantity: null,
+    message: null,
+  };
+}
+
+function formatUnit(unit: string | null | undefined, t: ReturnType<typeof useLanguage>["t"]) {
+  if (!unit || unit === "items") return t("items");
+  if (unit === "piece" || unit === "pieces") return t("pieces");
+  return unit;
 }
 
 function formatLastSeen(

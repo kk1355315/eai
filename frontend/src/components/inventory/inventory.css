@@ -64,21 +64,45 @@
   padding: 0 42px;
 }
 
+.inventory-list + .inventory-list {
+  margin-top: 26px;
+}
+
+.inventory-list-title {
+  margin: 30px 0 4px;
+  color: #0c192a;
+  font-size: 30px;
+  font-weight: 760;
+  line-height: 36px;
+}
+
+.inventory-list-empty {
+  margin: 0 0 30px;
+  color: #7d889d;
+  font-size: 20px;
+  line-height: 30px;
+}
+
 .inventory-row {
   display: grid;
-  grid-template-columns: 108px minmax(0, 1fr) 116px 84px 112px;
+  grid-template-columns: 96px minmax(0, 1fr) 210px;
+  grid-template-areas:
+    "image copy confirm"
+    "image progress confirm"
+    "image state confirm";
   align-items: center;
-  min-height: 178px;
-  gap: 20px;
+  min-height: 206px;
+  gap: 11px 22px;
   border-top: 1px solid #e6ecf4;
   padding: 30px 0;
 }
 
 .inventory-row:first-child {
-  border-top: 0;
+  border-top: 1px solid #e6ecf4;
 }
 
 .inventory-food-image {
+  grid-area: image;
   display: grid;
   width: 96px;
   height: 96px;
@@ -113,6 +137,7 @@
 }
 
 .inventory-row-copy {
+  grid-area: copy;
   min-width: 0;
 }
 
@@ -158,7 +183,8 @@
 }
 
 .inventory-progress-track {
-  width: 116px;
+  grid-area: progress;
+  width: min(100%, 186px);
   height: 14px;
   overflow: hidden;
   border-radius: 6px;
@@ -188,6 +214,7 @@
 }
 
 .inventory-state-label {
+  grid-area: state;
   justify-self: start;
   font-size: 22px;
   font-weight: 650;
@@ -212,9 +239,30 @@
 }
 
 .inventory-confirm-controls {
+  grid-area: confirm;
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 9px;
   justify-items: stretch;
+}
+
+.inventory-confirm-controls.mode-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+  align-self: center;
+}
+
+.inventory-confirm-controls.mode-collapsed button {
+  min-height: 58px;
+}
+
+.inventory-confirm-controls.mode-check {
+  grid-template-columns: minmax(0, 1fr);
+  align-self: center;
+}
+
+.inventory-confirm-controls label {
+  display: block;
+  min-width: 0;
 }
 
 .inventory-confirm-controls input,
@@ -240,7 +288,7 @@
   border-radius: 10px;
   color: #ffffff;
   background: #2584ff;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 760;
   cursor: pointer;
 }
@@ -252,9 +300,35 @@
 }
 
 .inventory-event-controls {
+  grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 7px;
+}
+
+.inventory-event-quantity {
+  grid-column: 1 / -1;
+}
+
+.inventory-check-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.inventory-check-actions > button {
+  min-height: 48px;
+  padding: 0 8px;
+  color: #2584ff;
+  background: rgba(37, 132, 255, 0.1);
+  font-size: 14px;
+}
+
+.inventory-snooze-controls {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
 }
 
 .inventory-event-controls button {
@@ -342,11 +416,12 @@
   }
 
   .inventory-row {
-    grid-template-columns: 72px minmax(0, 1fr) minmax(0, auto);
+    grid-template-columns: 72px minmax(0, 1fr);
     grid-template-areas:
-      "image copy copy"
-      "image progress state"
-      "image confirm confirm";
+      "image copy"
+      "image progress"
+      "image state"
+      "confirm confirm";
     gap: 8px 14px;
     min-height: 118px;
     padding: 18px 0;
@@ -398,29 +473,30 @@
   }
 
   .inventory-progress-track {
-    grid-area: progress;
-    width: min(100%, 154px);
+    width: min(100%, 180px);
   }
 
   .inventory-state-label {
-    grid-area: state;
     min-width: 0;
     max-width: 100%;
-    justify-self: end;
+    justify-self: start;
     font-size: 18px;
     line-height: 24px;
     overflow-wrap: anywhere;
-    text-align: right;
+    text-align: left;
     white-space: normal;
   }
 
   .inventory-confirm-controls {
-    grid-area: confirm;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: center;
   }
 
   .inventory-event-controls {
     grid-column: 1 / -1;
+  }
+
+  .inventory-check-actions {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

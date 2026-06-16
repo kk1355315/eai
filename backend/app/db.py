@@ -18,12 +18,20 @@ def init_db() -> None:
 
 def _ensure_schema_updates() -> None:
     inspector = inspect(engine)
+    if inspector.has_table("inventory_items"):
+        inventory_columns = {
+            column["name"] for column in inspector.get_columns("inventory_items")
+        }
+        if "check_snoozed_until" not in inventory_columns:
+            with engine.begin() as connection:
+                connection.execute(
+                    text("ALTER TABLE inventory_items ADD COLUMN check_snoozed_until DATETIME")
+                )
+
     if not inspector.has_table("nutrition_facts"):
         return
 
-    columns = {
-        column["name"] for column in inspector.get_columns("nutrition_facts")
-    }
+    columns = {column["name"] for column in inspector.get_columns("nutrition_facts")}
     pending_columns = []
     if "fdc_id" not in columns:
         pending_columns.append("ADD COLUMN fdc_id INTEGER")

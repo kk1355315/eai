@@ -38,7 +38,7 @@ describe("user events api", () => {
     ).resolves.toEqual(event);
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("http://eai.744477.xyz/api/user-food-events");
+    expect(url).toBe("/api/user-food-events");
     expect(init.method).toBe("POST");
     expect(init.body).toBe(
       JSON.stringify({
@@ -100,6 +100,6 @@ describe("user events api", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(fetchHabits()).resolves.toEqual(habits);
-    expect(fetchMock.mock.calls[0][0]).toBe("http://eai.744477.xyz/api/habits");
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/habits");
   });
 });
