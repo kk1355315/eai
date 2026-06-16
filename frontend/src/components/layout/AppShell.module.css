@@ -1,26 +1,27 @@
 .viewport {
   --bottom-nav-height: 120px;
   --bottom-nav-offset: max(24px, env(safe-area-inset-bottom));
-  --content-bottom-gap: 48px;
+  --content-bottom-gap: 18px;
   --content-bottom-padding: calc(
     var(--bottom-nav-height) + var(--bottom-nav-offset) + var(--content-bottom-gap)
   );
 
   display: flex;
   width: 100%;
-  min-height: 100vh;
-  min-height: 100svh;
+  height: 100vh;
+  height: 100svh;
   justify-content: center;
+  overflow: hidden;
   padding: 0;
 }
 
 .phoneFrame {
   position: relative;
   width: min(100%, var(--app-max-width));
-  min-height: 100vh;
-  min-height: 100svh;
+  height: 100vh;
+  height: 100svh;
   margin: 0 auto;
-  overflow: visible;
+  overflow: hidden;
   border-radius: 48px;
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.18)),
@@ -29,9 +30,24 @@
 
 .content {
   width: 100%;
-  min-height: 100vh;
-  min-height: 100svh;
+  height: 100vh;
+  height: 100svh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 103px 67px var(--content-bottom-padding) 74px;
+  scrollbar-gutter: stable both-edges;
+  -webkit-overflow-scrolling: touch;
+}
+
+.bottomScrim {
+  position: absolute;
+  z-index: 19;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: calc(var(--bottom-nav-offset) + 48px);
+  background: #f8fbff;
+  pointer-events: none;
 }
 
 .header {
@@ -101,8 +117,8 @@
   }
 
   .phoneFrame {
-    min-height: 100vh;
-    min-height: 100svh;
+    height: 100vh;
+    height: 100svh;
     padding: 0;
     border: 1px solid rgba(255, 255, 255, 0.72);
     border-radius: 48px;
@@ -116,8 +132,8 @@
   }
 
   .content {
-    min-height: 100vh;
-    min-height: 100svh;
+    height: 100vh;
+    height: 100svh;
   }
 }
 
@@ -125,7 +141,7 @@
   .viewport {
     --bottom-nav-height: 96px;
     --bottom-nav-offset: max(14px, env(safe-area-inset-bottom));
-    --content-bottom-gap: 34px;
+    --content-bottom-gap: 14px;
   }
 
   .phoneFrame {

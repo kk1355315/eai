@@ -29,18 +29,18 @@ type AskAiPanelProps = {
 
 const styles = {
   card: {
-    padding: 28,
+    padding: "48px 42px 52px",
   },
   header: {
     display: "flex",
     alignItems: "center",
-    gap: 14,
-    marginBottom: 22,
+    gap: 18,
+    marginBottom: 30,
   },
   icon: {
-    width: 46,
-    height: 46,
-    borderRadius: 12,
+    width: 58,
+    height: 58,
+    borderRadius: 16,
     display: "grid",
     placeItems: "center",
     color: "#2584ff",
@@ -49,44 +49,44 @@ const styles = {
   title: {
     margin: 0,
     color: "#07152f",
-    fontSize: 30,
+    fontSize: 38,
     lineHeight: 1.12,
     fontWeight: 820,
     letterSpacing: 0,
   },
   form: {
     display: "grid",
-    gap: 12,
+    gap: 24,
   },
   textarea: {
     width: "100%",
-    minHeight: 132,
+    minHeight: 238,
     boxSizing: "border-box" as const,
     resize: "vertical" as const,
     border: "1px solid rgba(143, 164, 194, 0.22)",
-    borderRadius: 12,
-    padding: "20px 22px",
+    borderRadius: 16,
+    padding: "26px 28px",
     color: "#07152f",
     background: "rgba(255, 255, 255, 0.68)",
     font: "inherit",
-    fontSize: 19,
+    fontSize: 23,
     lineHeight: 1.5,
     outline: "none",
   },
   searchRow: {
     display: "grid",
     gridTemplateColumns: "1fr auto",
-    gap: 12,
+    gap: 16,
     alignItems: "center",
   },
   inputWrap: {
     display: "grid",
-    gridTemplateColumns: "20px 1fr",
+    gridTemplateColumns: "24px 1fr",
     alignItems: "center",
-    gap: 8,
+    gap: 12,
     border: "1px solid rgba(143, 164, 194, 0.22)",
-    borderRadius: 12,
-    padding: "15px 16px",
+    borderRadius: 16,
+    padding: "20px 22px",
     color: "#8a98b3",
     background: "rgba(255, 255, 255, 0.58)",
   },
@@ -97,26 +97,26 @@ const styles = {
     color: "#07152f",
     background: "transparent",
     font: "inherit",
-    fontSize: 18,
+    fontSize: 22,
   },
   thinking: {
     display: "flex",
     alignItems: "center",
-    gap: 8,
+    gap: 12,
     color: "#697895",
-    fontSize: 17,
+    fontSize: 21,
     lineHeight: 1.35,
   },
   checkbox: {
-    width: 22,
-    height: 22,
+    width: 26,
+    height: 26,
     accentColor: "#2584ff",
   },
   button: {
-    width: 58,
-    height: 58,
+    width: 72,
+    height: 72,
     border: 0,
-    borderRadius: 13,
+    borderRadius: 17,
     display: "grid",
     placeItems: "center",
     color: "#ffffff",
@@ -180,7 +180,7 @@ export function AskAiPanel({ result, isPending = false, onSubmit }: AskAiPanelPr
     <GlassCard style={styles.card}>
       <div style={styles.header}>
         <span style={styles.icon} aria-hidden="true">
-          <Sparkles size={19} strokeWidth={2.2} />
+          <Sparkles size={24} strokeWidth={2.2} />
         </span>
         <h2 style={styles.title}>{t("askAdvice")}</h2>
       </div>
@@ -193,7 +193,7 @@ export function AskAiPanel({ result, isPending = false, onSubmit }: AskAiPanelPr
         />
         <div style={styles.searchRow}>
           <label style={styles.inputWrap}>
-            <Search size={17} strokeWidth={2.1} aria-hidden="true" />
+            <Search size={21} strokeWidth={2.1} aria-hidden="true" />
             <input
               style={styles.input}
               value={searchQuery}
@@ -207,7 +207,7 @@ export function AskAiPanel({ result, isPending = false, onSubmit }: AskAiPanelPr
             disabled={isPending}
             aria-label={t("sendAdviceRequest")}
           >
-            <Send size={18} strokeWidth={2.3} aria-hidden="true" />
+            <Send size={23} strokeWidth={2.3} aria-hidden="true" />
           </button>
         </div>
         <label style={styles.thinking}>

@@ -41,6 +41,7 @@ export function AppShell() {
           </header>
           <Outlet />
         </main>
+        <div className={styles.bottomScrim} aria-hidden="true" />
         <BottomNav />
       </div>
     </div>
