@@ -12,6 +12,7 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 *.db
+*.db.backup-*
 *.sqlite
 *.sqlite3
 .env
