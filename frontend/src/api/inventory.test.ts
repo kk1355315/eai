@@ -1,10 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createElement, type ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { renderHook, waitFor } from "@testing-library/react";
 import type { InventoryItem } from "./types";
 import {
   confirmInventoryChange,
   fetchInventory,
   fetchStorageStates,
   patchInventoryItem,
+  usePatchInventory,
 } from "./inventory";
 
 function inventoryItem(overrides: Partial<InventoryItem> = {}): InventoryItem {
@@ -65,7 +69,7 @@ describe("inventory api", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(fetchInventory()).resolves.toEqual([items[0]]);
-    expect(fetchMock.mock.calls[0][0]).toBe("http://eai.744477.xyz/api/inventory");
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/inventory");
   });
 
   it("fetches storage states and filters unsupported foods", async () => {
@@ -81,7 +85,7 @@ describe("inventory api", () => {
 
     await expect(fetchStorageStates()).resolves.toEqual([items[0]]);
     expect(fetchMock.mock.calls[0][0]).toBe(
-      "http://eai.744477.xyz/api/inventory/storage-states",
+      "/api/inventory/storage-states",
     );
   });
 
@@ -95,7 +99,7 @@ describe("inventory api", () => {
     });
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("http://eai.744477.xyz/api/inventory/42");
+    expect(url).toBe("/api/inventory/42");
     expect(init.method).toBe("PATCH");
     expect(init.body).toBe(
       JSON.stringify({
@@ -116,7 +120,7 @@ describe("inventory api", () => {
     });
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("http://eai.744477.xyz/api/inventory/42/confirm-change");
+    expect(url).toBe("/api/inventory/42/confirm-change");
     expect(init.method).toBe("POST");
     expect(init.body).toBe(
       JSON.stringify({
@@ -125,5 +129,29 @@ describe("inventory api", () => {
         as_new_batch: false,
       }),
     );
+  });
+
+  it("invalidates advice after patching inventory state", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(inventoryItem()));
+    vi.stubGlobal("fetch", fetchMock);
+    const queryClient = new QueryClient({
+      defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
+    });
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    function Wrapper({ children }: { children: ReactNode }) {
+      return createElement(QueryClientProvider, { client: queryClient }, children);
+    }
+
+    const { result } = renderHook(() => usePatchInventory(), { wrapper: Wrapper });
+
+    await result.current.mutateAsync({
+      itemId: 42,
+      patch: { storage_location: "refrigerate" },
+    });
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["advice"] });
+    });
   });
 });

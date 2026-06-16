@@ -68,6 +68,7 @@ export function usePatchInventory() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: inventoryQueryKey });
       void queryClient.invalidateQueries({ queryKey: storageStatesQueryKey });
+      void queryClient.invalidateQueries({ queryKey: ["advice"] });
     },
   });
 }

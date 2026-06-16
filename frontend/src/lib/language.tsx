@@ -110,11 +110,33 @@ const translations = {
     waitingConfirmation: "waiting for confirmation",
     weightManagement: "Weight Management",
     editProfileSection: "Edit profile section",
+    editProfile: "Edit profile",
+    expiring: "Expiring",
+    profileGoalTitle: "Goal",
+    profileGoalHint: "Keep the recommendation direction practical.",
+    profileGoalPlaceholder: "Eat fruit before it loses freshness",
+    profileDietTitle: "Diet Preference",
+    profileDietHint: "Short preference for daily food advice.",
+    profileDietPlaceholder: "Light, low sugar, fruit first",
+    profileCookingTitle: "Cooking Condition",
+    profileCookingHint: "What you can prepare at home.",
+    profileCookingPlaceholder: "No oven, simple washing and slicing",
+    profileAvoidTitle: "Avoid Foods",
+    profileAvoidHint: "Only MVP fruit options are supported.",
+    profileAvoidLabel: "Fruit to avoid",
+    profileAllergiesTitle: "Allergies",
+    profileAllergiesHint: "Optional notes used by food advice.",
+    profileHealthNotesTitle: "Health Notes",
+    profileHealthNotesHint: "Optional constraints to keep recommendations calm.",
+    profileOptionalPlaceholder: "Optional",
+    saveProfile: "Save Profile",
+    saving: "Saving",
     referenceDateToday: "Reference date today",
     checkTiming: "Check timing",
     daysLeft: "days left",
     dayLeft: "day left",
     seen: "Seen",
+    total: "Total",
   },
   zh: {
     advice: "建议",
@@ -211,11 +233,33 @@ const translations = {
     waitingConfirmation: "待确认",
     weightManagement: "体重管理",
     editProfileSection: "编辑资料栏目",
+    editProfile: "编辑资料",
+    expiring: "临期",
+    profileGoalTitle: "目标",
+    profileGoalHint: "让推荐方向保持实用。",
+    profileGoalPlaceholder: "在水果失去新鲜度前吃完",
+    profileDietTitle: "饮食偏好",
+    profileDietHint: "用于日常饮食建议的简短偏好。",
+    profileDietPlaceholder: "清淡、低糖、优先吃水果",
+    profileCookingTitle: "处理条件",
+    profileCookingHint: "你在家可以如何处理食物。",
+    profileCookingPlaceholder: "没有烤箱，只做简单清洗和切分",
+    profileAvoidTitle: "避免食物",
+    profileAvoidHint: "当前仅支持 MVP 范围内的水果。",
+    profileAvoidLabel: "要避免的水果",
+    profileAllergiesTitle: "过敏源",
+    profileAllergiesHint: "用于饮食建议的可选备注。",
+    profileHealthNotesTitle: "健康备注",
+    profileHealthNotesHint: "让推荐保持稳妥的可选限制。",
+    profileOptionalPlaceholder: "可选",
+    saveProfile: "保存资料",
+    saving: "保存中",
     referenceDateToday: "今天到参考期限",
     checkTiming: "检查保存时间",
     daysLeft: "天剩余",
     dayLeft: "天剩余",
     seen: "识别于",
+    total: "总数",
   },
 } as const satisfies Record<Language, Record<string, string>>;
 
@@ -245,8 +289,14 @@ type LanguageContextValue = {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<Language>("en");
+export function LanguageProvider({
+  children,
+  initialLanguage = "zh",
+}: {
+  children: ReactNode;
+  initialLanguage?: Language;
+}) {
+  const [language, setLanguage] = useState<Language>(initialLanguage);
 
   const value = useMemo<LanguageContextValue>(
     () => ({

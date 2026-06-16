@@ -41,7 +41,7 @@ describe("profile api", () => {
     await expect(fetchProfile()).resolves.toMatchObject({
       avoid_foods: ["apple", "pear"],
     });
-    expect(fetchMock.mock.calls[0][0]).toBe("http://eai.744477.xyz/api/profile");
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/profile");
   });
 
   it("filters avoid_foods before patching profile", async () => {
@@ -56,7 +56,7 @@ describe("profile api", () => {
     });
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("http://eai.744477.xyz/api/profile");
+    expect(url).toBe("/api/profile");
     expect(init.method).toBe("PATCH");
     expect(init.body).toBe(
       JSON.stringify({

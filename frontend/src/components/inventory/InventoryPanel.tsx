@@ -128,7 +128,7 @@ export function InventoryPanel({
   }
 
   const visibleItems = items.filter((item) => item.status !== "consumed" && item.status !== "discarded");
-  const rows = visibleItems.map(toInventoryRow);
+  const rows = visibleItems.map((item) => toInventoryRow(item, t));
   const totalQuantity = visibleItems.reduce((total, item) => total + item.confirmed_quantity, 0);
   const freshCount = visibleItems.filter((item) => item.storage_state === "fresh").length;
   const expiringCount = visibleItems.filter((item) =>
@@ -140,9 +140,9 @@ export function InventoryPanel({
   return (
     <>
       <section className="inventory-summary-card" aria-label={t("inventorySummary")}>
-        <SummaryStat label="Total" value={totalQuantity} />
-        <SummaryStat label="Fresh" tone="fresh" value={freshCount} />
-        <SummaryStat label="Expiring" tone="expiring" value={expiringCount} />
+        <SummaryStat label={t("total")} value={totalQuantity} />
+        <SummaryStat label={t("fresh")} tone="fresh" value={freshCount} />
+        <SummaryStat label={t("expiring")} tone="expiring" value={expiringCount} />
       </section>
 
       <section className="inventory-list" aria-label={t("inventory")}>
@@ -364,10 +364,13 @@ function formatState(
   return t("check");
 }
 
-function toInventoryRow(item: InventoryItem): InventoryRow {
+function toInventoryRow(
+  item: InventoryItem,
+  t: ReturnType<typeof useLanguage>["t"],
+): InventoryRow {
   const food = item.food.model_label;
   const isKnownFruit = isSupportedFoodLabel(food);
-  const quantityLabel = `${item.confirmed_quantity} ${item.unit || "items"}`;
+  const quantityLabel = `${item.confirmed_quantity} ${formatUnit(item.unit, t)}`;
 
   return {
     id: item.id,
@@ -409,7 +412,13 @@ function formatPendingChange(
   if (change === "new_quantity") return t("newQuantity");
   if (change === "possible_added") return t("possibleAdded");
   if (change === "possible_consumed") return t("possibleUsed");
-  return "Confirmed";
+  return t("confirmedQuantity");
+}
+
+function formatUnit(unit: string | null | undefined, t: ReturnType<typeof useLanguage>["t"]) {
+  if (!unit || unit === "items") return t("items");
+  if (unit === "piece" || unit === "pieces") return t("pieces");
+  return unit;
 }
 
 function formatLastSeen(

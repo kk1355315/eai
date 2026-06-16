@@ -47,7 +47,7 @@ describe("apiRequest", () => {
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const headers = new Headers(init.headers);
 
-    expect(url).toBe("http://eai.744477.xyz/api/inventory?page=1&active=true");
+    expect(url).toBe("/api/inventory?page=1&active=true");
     expect(init.method).toBe("POST");
     expect(init.body).toBe(JSON.stringify({ food: "apple" }));
     expect(headers.get("Accept")).toBe("application/json");
@@ -61,7 +61,7 @@ describe("apiRequest", () => {
 
     await apiRequest("/api/profile");
 
-    expect(fetchMock.mock.calls[0][0]).toBe("http://eai.744477.xyz/api/profile");
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/profile");
   });
 
   it("throws ApiError with json detail and details payload", async () => {

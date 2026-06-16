@@ -33,12 +33,15 @@ export function ProfileFieldRow({
 
 const styles: Record<string, CSSProperties> = {
   row: {
-    borderBottom: "1px solid rgba(143, 164, 194, 0.18)",
-    padding: "22px 0",
+    background: "rgba(255, 255, 255, 0.76)",
+    border: "1px solid rgba(255, 255, 255, 0.86)",
+    borderRadius: 24,
+    boxShadow: "0 14px 34px rgba(74, 103, 139, 0.1)",
+    padding: "22px 24px 24px",
   },
   rowQuiet: {
-    borderBottom: 0,
-    paddingBottom: 0,
+    borderBottom: "1px solid rgba(255, 255, 255, 0.86)",
+    paddingBottom: 24,
   },
   rowHead: {
     alignItems: "center",

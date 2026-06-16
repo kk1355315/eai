@@ -4,12 +4,12 @@ import { LoadingCard } from "../components/ui/LoadingCard";
 import { ErrorCard } from "../components/ui/ErrorCard";
 import { EmptyCard } from "../components/ui/EmptyCard";
 import {
-  ProfileForm,
   ProfileOverview,
+  type ProfileEditField,
   type ProfileFormValue,
 } from "../components/profile";
 import { profileQueryKey, usePatchProfile, useProfile } from "../api/profile";
-import type { Profile } from "../api/types";
+import type { Profile, ProfilePatch } from "../api/types";
 import { useLanguage } from "../lib/language";
 import { filterSupportedFoodLabels } from "../lib/foods";
 
@@ -29,13 +29,13 @@ export default function ProfilePage() {
   const patchProfile = usePatchProfile();
   const profile = profileQuery.data;
   const [formValue, setFormValue] = useState<ProfileFormValue>(emptyFormValue);
-  const [isEditing, setIsEditing] = useState(false);
+  const [activeField, setActiveField] = useState<ProfileEditField | null>(null);
 
   useEffect(() => {
-    if (profile && !isEditing) {
+    if (profile && !activeField) {
       setFormValue(toFormValue(profile));
     }
-  }, [isEditing, profile]);
+  }, [activeField, profile]);
 
   if (profileQuery.isLoading && !profile) {
     return <LoadingCard title="Loading profile" />;
@@ -59,32 +59,33 @@ export default function ProfilePage() {
   return (
     <div style={styles.stack}>
       <ProfileOverview
-        profile={profile}
-        onEdit={() => {
-          setFormValue(toFormValue(profile));
-          setIsEditing(true);
+        activeField={activeField}
+        canSubmit={canSubmit}
+        error={error}
+        formValue={formValue}
+        isSaving={patchProfile.isPending}
+        onChange={setFormValue}
+        onSubmit={() => {
+          if (!activeField) {
+            return;
+          }
+
+          patchProfile.mutate(toProfilePatch(formValue, activeField), {
+            onSuccess: (updatedProfile) => {
+              queryClient.setQueryData(profileQueryKey, updatedProfile);
+              setFormValue(toFormValue(updatedProfile));
+              setActiveField(null);
+            },
+          });
         }}
+        onToggleField={(field) => {
+          if (!activeField) {
+            setFormValue(toFormValue(profile));
+          }
+          setActiveField((current) => (current === field ? null : field));
+        }}
+        profile={profile}
       />
-      {isEditing ? (
-        <section style={styles.formCard} aria-label="Edit profile">
-          <ProfileForm
-            value={formValue}
-            onChange={setFormValue}
-            onSubmit={() => {
-              patchProfile.mutate(toProfilePatch(formValue), {
-                onSuccess: (updatedProfile) => {
-                  queryClient.setQueryData(profileQueryKey, updatedProfile);
-                  setFormValue(toFormValue(updatedProfile));
-                  setIsEditing(false);
-                },
-              });
-            }}
-            isSaving={patchProfile.isPending}
-            canSubmit={canSubmit}
-            error={error}
-          />
-        </section>
-      ) : null}
     </div>
   );
 }
@@ -100,15 +101,24 @@ function toFormValue(profile: Profile): ProfileFormValue {
   };
 }
 
-function toProfilePatch(value: ProfileFormValue) {
-  return {
-    goal: value.goal.trim(),
-    diet_preference: value.diet_preference.trim(),
-    cooking_condition: value.cooking_condition.trim(),
-    avoid_foods: value.avoid_foods,
-    allergies_optional: optionalText(value.allergies_optional),
-    health_notes_optional: optionalText(value.health_notes_optional),
-  };
+function toProfilePatch(
+  value: ProfileFormValue,
+  activeField: ProfileEditField,
+): ProfilePatch {
+  switch (activeField) {
+    case "goal":
+      return { goal: value.goal.trim() };
+    case "diet_preference":
+      return { diet_preference: value.diet_preference.trim() };
+    case "cooking_condition":
+      return { cooking_condition: value.cooking_condition.trim() };
+    case "avoid_foods":
+      return { avoid_foods: value.avoid_foods };
+    case "allergies_optional":
+      return { allergies_optional: optionalText(value.allergies_optional) };
+    case "health_notes_optional":
+      return { health_notes_optional: optionalText(value.health_notes_optional) };
+  }
 }
 
 function optionalText(value: string) {
@@ -121,15 +131,5 @@ const styles: Record<string, CSSProperties> = {
     display: "grid",
     gap: 21,
     width: "min(100%, 809px)",
-  },
-  formCard: {
-    background: "rgba(255, 255, 255, 0.72)",
-    border: "1px solid rgba(255, 255, 255, 0.82)",
-    borderRadius: 34,
-    boxShadow: "0 18px 46px rgba(74, 103, 139, 0.12)",
-    boxSizing: "border-box",
-    maxWidth: "100%",
-    padding: "clamp(14px, 4vw, 18px) clamp(22px, 5vw, 40px) clamp(28px, 6vw, 36px)",
-    width: "100%",
   },
 };

@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import { CircleGauge, Leaf, Package, ShieldPlus } from "lucide-react";
 import type { SupportedFoodLabel } from "../../api/types";
 import { FOOD_DISPLAY_NAMES, SUPPORTED_FOODS } from "../../lib/foods";
+import { useLanguage } from "../../lib/language";
 import { ProfileFieldRow } from "./ProfileFieldRow";
 import { ProfilePillGroup } from "./ProfilePillGroup";
 
@@ -40,6 +41,7 @@ export function ProfileForm({
   canSubmit = true,
   error,
 }: ProfileFormProps) {
+  const { t } = useLanguage();
   const updateField = (field: keyof ProfileFormValue, nextValue: string | AvoidFood[]) => {
     onChange({
       ...value,
@@ -57,14 +59,14 @@ export function ProfileForm({
     >
       <ProfileFieldRow
         icon={<CircleGauge size={23} strokeWidth={2.2} />}
-        title="Goal"
-        hint="Keep the recommendation direction practical."
+        title={t("profileGoalTitle")}
+        hint={t("profileGoalHint")}
       >
         <textarea
           required
           value={value.goal}
           onChange={(event) => updateField("goal", event.target.value)}
-          placeholder="Eat fruit before it loses freshness"
+          placeholder={t("profileGoalPlaceholder")}
           rows={3}
           style={styles.textarea}
         />
@@ -72,28 +74,28 @@ export function ProfileForm({
 
       <ProfileFieldRow
         icon={<Leaf size={23} strokeWidth={2.2} />}
-        title="Diet Preference"
-        hint="Short preference for daily food advice."
+        title={t("profileDietTitle")}
+        hint={t("profileDietHint")}
       >
         <input
           required
           value={value.diet_preference}
           onChange={(event) => updateField("diet_preference", event.target.value)}
-          placeholder="Light, low sugar, fruit first"
+          placeholder={t("profileDietPlaceholder")}
           style={styles.input}
         />
       </ProfileFieldRow>
 
       <ProfileFieldRow
         icon={<Package size={23} strokeWidth={2.2} />}
-        title="Cooking Condition"
-        hint="What you can prepare at home."
+        title={t("profileCookingTitle")}
+        hint={t("profileCookingHint")}
       >
         <textarea
           required
           value={value.cooking_condition}
           onChange={(event) => updateField("cooking_condition", event.target.value)}
-          placeholder="No oven, simple washing and slicing"
+          placeholder={t("profileCookingPlaceholder")}
           rows={3}
           style={styles.textarea}
         />
@@ -101,11 +103,11 @@ export function ProfileForm({
 
       <ProfileFieldRow
         icon={<ShieldPlus size={23} strokeWidth={2.2} />}
-        title="Avoid Foods"
-        hint="Only MVP fruit options are supported."
+        title={t("profileAvoidTitle")}
+        hint={t("profileAvoidHint")}
       >
         <ProfilePillGroup
-          label="Fruit to avoid"
+          label={t("profileAvoidLabel")}
           options={avoidFoodOptions}
           value={value.avoid_foods}
           onChange={(nextValue) => updateField("avoid_foods", nextValue)}
@@ -114,13 +116,13 @@ export function ProfileForm({
 
       <ProfileFieldRow
         icon={<ShieldPlus size={23} strokeWidth={2.2} />}
-        title="Allergies"
-        hint="Optional notes used by food advice."
+        title={t("profileAllergiesTitle")}
+        hint={t("profileAllergiesHint")}
       >
         <textarea
           value={value.allergies_optional}
           onChange={(event) => updateField("allergies_optional", event.target.value)}
-          placeholder="Optional"
+          placeholder={t("profileOptionalPlaceholder")}
           rows={2}
           style={styles.textarea}
         />
@@ -129,13 +131,13 @@ export function ProfileForm({
       <ProfileFieldRow
         quiet
         icon={<ShieldPlus size={23} strokeWidth={2.2} />}
-        title="Health Notes"
-        hint="Optional constraints to keep recommendations calm."
+        title={t("profileHealthNotesTitle")}
+        hint={t("profileHealthNotesHint")}
       >
         <textarea
           value={value.health_notes_optional}
           onChange={(event) => updateField("health_notes_optional", event.target.value)}
-          placeholder="Optional"
+          placeholder={t("profileOptionalPlaceholder")}
           rows={3}
           style={styles.textarea}
         />
@@ -151,7 +153,7 @@ export function ProfileForm({
           ...(!canSubmit || isSaving ? styles.saveButtonDisabled : undefined),
         }}
       >
-        {isSaving ? "Saving" : "Save Profile"}
+        {isSaving ? t("saving") : t("saveProfile")}
       </button>
     </form>
   );
@@ -175,6 +177,7 @@ const styles: Record<string, CSSProperties> = {
   form: {
     display: "flex",
     flexDirection: "column",
+    gap: 16,
   },
   input: {
     ...controlBase,

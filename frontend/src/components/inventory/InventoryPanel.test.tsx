@@ -60,8 +60,28 @@ describe("InventoryPanel", () => {
 
     const list = screen.getByLabelText("Inventory");
     expect(within(list).getByText("苹果")).toBeTruthy();
-    expect(within(list).getByText("2 piece")).toBeTruthy();
+    expect(within(list).getByText("2 pieces")).toBeTruthy();
     expect(within(list).queryByText("Vegetables")).toBeNull();
+  });
+
+  it("renders summary and controls in Chinese", () => {
+    renderWithProviders(
+      <InventoryPanel
+        items={[inventoryItem({ unit: "piece" })]}
+        onConfirmChange={vi.fn()}
+        onCreateUserFoodEvent={vi.fn()}
+        onPatchInventory={vi.fn()}
+      />,
+      { language: "zh" },
+    );
+
+    const summary = screen.getByLabelText("库存概览");
+    expect(within(summary).getByText("总数")).toBeTruthy();
+    expect(within(summary).getByText("新鲜")).toBeTruthy();
+    expect(within(summary).getByText("临期")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "确认" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "已食用" })).toBeTruthy();
+    expect(screen.getByText("2 个")).toBeTruthy();
   });
 
   it("renders readable inventory facts and confirm-change controls", () => {
