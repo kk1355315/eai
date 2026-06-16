@@ -1,4 +1,5 @@
 import { Bell } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useLanguage } from "../../lib/language";
 import "./home.css";
 
@@ -12,7 +13,7 @@ export function PendingConfirmNotice({ count }: PendingConfirmNoticeProps) {
   if (count <= 0) return null;
 
   return (
-    <section className="home-card home-pending-card">
+    <Link className="home-card home-pending-card" to="/inventory">
       <span className="home-pending-icon" aria-hidden="true">
         <Bell size={22} strokeWidth={2.2} />
       </span>
@@ -28,6 +29,6 @@ export function PendingConfirmNotice({ count }: PendingConfirmNoticeProps) {
             : "Confirm inventory changes first"}
         </p>
       </div>
-    </section>
+    </Link>
   );
 }

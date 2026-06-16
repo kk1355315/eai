@@ -4,11 +4,13 @@ import { ChevronLeft, ShoppingBasket } from "lucide-react";
 import { useGenerateLlmAdvice, useShoppingAdvice } from "../api/advice";
 import { EmptyCard } from "../components/ui/EmptyCard";
 import { ErrorCard } from "../components/ui/ErrorCard";
+import { GlassCard } from "../components/ui/GlassCard";
 import { LoadingCard } from "../components/ui/LoadingCard";
-import { AdviceCard, type AdviceItem as CardAdviceItem } from "../components/advice/AdviceCard";
+import { type AdviceItem as CardAdviceItem } from "../components/advice/AdviceCard";
 import { AskAiPanel, type AskAiRequest, type AskAiResult } from "../components/advice/AskAiPanel";
 import { mapAdviceResponseLike, type AdviceViewModel } from "../lib/mappers";
 import { useLanguage } from "../lib/language";
+import { getFoodDisplayName, isSupportedFoodLabel } from "../lib/foods";
 
 type QueryLike<T> = {
   data?: T;
@@ -62,6 +64,32 @@ const styles = {
     display: "grid",
     gap: 18,
   },
+  shoppingSummaryCard: {
+    padding: "22px 28px",
+  },
+  shoppingSummary: {
+    display: "grid",
+    gridTemplateColumns: "46px 1fr",
+    alignItems: "center",
+    gap: 16,
+  },
+  shoppingSummaryIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 12,
+    display: "grid",
+    placeItems: "center",
+    color: "#2584ff",
+    background: "rgba(37, 132, 255, 0.1)",
+  },
+  shoppingSummaryText: {
+    margin: 0,
+    color: "#07152f",
+    fontSize: 25,
+    lineHeight: 1.28,
+    fontWeight: 800,
+    letterSpacing: 0,
+  },
 } satisfies Record<string, CSSProperties>;
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -93,6 +121,18 @@ function normalizeAdviceCards(data: unknown): CardAdviceItem[] {
   return mapAdviceResponseLike(data).map(toCardAdvice);
 }
 
+function getShoppingSummaryFoods(items: CardAdviceItem[]): string[] {
+  const foods: string[] = [];
+  for (const item of items) {
+    for (const food of item.relatedFoods ?? []) {
+      if (!foods.includes(food)) {
+        foods.push(food);
+      }
+    }
+  }
+  return foods;
+}
+
 function normalizeAskAiResult(data: unknown): AskAiResult {
   const record = asRecord(data);
   const advice = asRecord(record.advice);
@@ -111,13 +151,26 @@ function normalizeAskAiResult(data: unknown): AskAiResult {
 }
 
 export default function AdvicePage() {
-  const { t } = useLanguage();
+  const { foodName, language, t } = useLanguage();
   const shoppingQuery = useShoppingAdvice() as QueryLike<unknown>;
   const askMutation = useGenerateLlmAdvice() as MutationLike<AskAiRequest, unknown>;
   const [askResult, setAskResult] = useState<AskAiResult | null>(null);
   const shoppingData = shoppingQuery.data;
 
   const shoppingItems = useMemo(() => normalizeAdviceCards(shoppingData), [shoppingData]);
+  const shoppingSummaryFoods = useMemo(
+    () => getShoppingSummaryFoods(shoppingItems),
+    [shoppingItems],
+  );
+  const shoppingSummaryText = shoppingSummaryFoods.length
+    ? `${shoppingSummaryFoods
+        .map((food) =>
+          isSupportedFoodLabel(food)
+            ? foodName(food, getFoodDisplayName(food))
+            : getFoodDisplayName(food),
+        )
+        .join(language === "zh" ? "、" : ", ")} ${t("shoppingDuplicateSummary")}`
+    : null;
   const isAskPending = Boolean(askMutation.isPending || askMutation.isLoading);
 
   async function handleAskSubmit(request: AskAiRequest) {
@@ -163,11 +216,16 @@ export default function AdvicePage() {
               description={t("noShoppingAdviceCopy")}
             />
           ) : null}
-          {!shoppingQuery.isLoading && !shoppingQuery.isError
-            ? shoppingItems.map((item, index) => (
-                <AdviceCard key={item.id ?? `${item.title ?? "shopping"}-${index}`} item={item} tone="shopping" />
-              ))
-            : null}
+          {!shoppingQuery.isLoading && !shoppingQuery.isError && shoppingSummaryText ? (
+            <GlassCard style={styles.shoppingSummaryCard}>
+              <div style={styles.shoppingSummary}>
+                <span style={styles.shoppingSummaryIcon} aria-hidden="true">
+                  <ShoppingBasket size={19} strokeWidth={2.2} />
+                </span>
+                <p style={styles.shoppingSummaryText}>{shoppingSummaryText}</p>
+              </div>
+            </GlassCard>
+          ) : null}
         </div>
       </section>
 

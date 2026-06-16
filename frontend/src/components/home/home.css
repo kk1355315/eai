@@ -120,8 +120,28 @@
 
 .home-priority-grid {
   display: grid;
-  grid-template-columns: repeat(2, 340px);
+  grid-auto-columns: 340px;
+  grid-auto-flow: column;
+  grid-template-columns: none;
   gap: 30px;
+  max-height: 153px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  padding: 0 2px 2px 0;
+  scrollbar-width: none;
+  cursor: grab;
+  touch-action: pan-x;
+  user-select: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.home-priority-grid.is-dragging {
+  cursor: grabbing;
+}
+
+.home-priority-grid::-webkit-scrollbar {
+  display: none;
 }
 
 .home-priority-item {
@@ -182,33 +202,40 @@
 
 .home-need-list {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   min-height: 96px;
 }
 
 .home-need-row {
   display: grid;
-  grid-template-columns: 88px minmax(0, 1fr);
-  align-items: center;
-  gap: 21px;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: end;
+  justify-items: center;
   min-height: 96px;
-  padding: 0 20px 0 0;
+  padding: 0 24px;
   border-left: 1px solid #dce3ee;
+  text-align: center;
 }
 
 .home-need-row:first-child {
+  padding-left: 0;
   border-left: 0;
 }
 
 .home-need-row + .home-need-row {
   padding-top: 0;
   border-top: 0;
-  padding-left: 36px;
+}
+
+.home-need-row [role="img"] {
+  display: none;
 }
 
 .home-need-row .home-item-meta {
   color: #fb7900;
-  font-size: 23px;
+  font-size: 22px;
+  line-height: 30px;
+  white-space: nowrap;
 }
 
 .home-advisor-link {
@@ -271,6 +298,7 @@
   color: #1479f4;
   background: #eff7ff;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
+  text-decoration: none;
 }
 
 .home-pending-icon,
@@ -377,8 +405,11 @@
   }
 
   .home-priority-grid {
-    grid-template-columns: minmax(0, 1fr);
+    grid-auto-columns: minmax(240px, 82%);
+    grid-auto-flow: column;
+    grid-template-columns: none;
     gap: 16px;
+    max-height: none;
   }
 
   .home-priority-item {
@@ -442,6 +473,7 @@
   .home-need-row .home-item-meta {
     font-size: 18px;
     line-height: 25px;
+    white-space: normal;
   }
 
   .home-advisor-card {

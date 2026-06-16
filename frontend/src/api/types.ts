@@ -70,6 +70,7 @@ export interface InventoryItem {
   source_event_id: number | null;
   pending_change_type: PendingChangeType | string;
   pending_detected_quantity: number | null;
+  check_snoozed_until?: string | null;
   message?: string | null;
 }
 
@@ -85,6 +86,7 @@ export interface ConfirmChangeRequest {
   new_quantity?: number | null;
   status?: InventoryStatus | null;
   as_new_batch?: boolean;
+  snooze_days?: number | null;
 }
 
 export interface AdviceItem {

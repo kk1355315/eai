@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { FruitAvatar } from "../ui/FruitAvatar";
 import type { HomeFruit } from "./RecommendedFruitCard";
 import { useLanguage } from "../../lib/language";
@@ -20,18 +21,52 @@ function priorityMeta(item: HomeFruit, language: "en" | "zh") {
 
 export function PriorityList({ items }: PriorityListProps) {
   const { foodName, language, t } = useLanguage();
+  const dragState = useRef<{
+    active: boolean;
+    scrollLeft: number;
+    startX: number;
+  }>({ active: false, scrollLeft: 0, startX: 0 });
 
   return (
     <section className="home-card home-section-card">
       <div className="home-section-head">
         <h2 className="home-section-title">{t("priority")}</h2>
-        <span className="home-section-count">{items.slice(0, 2).length} {t("items")}</span>
+        <span className="home-section-count">{items.length} {t("items")}</span>
       </div>
       {items.length === 0 ? (
         <p className="home-empty-copy">{t("priorityEmpty")}</p>
       ) : (
-        <div className="home-priority-grid">
-          {items.slice(0, 2).map((item) => (
+        <div
+          className="home-priority-grid"
+          onPointerCancel={(event) => {
+            dragState.current.active = false;
+            event.currentTarget.classList.remove("is-dragging");
+          }}
+          onPointerDown={(event) => {
+            dragState.current = {
+              active: true,
+              scrollLeft: event.currentTarget.scrollLeft,
+              startX: event.clientX,
+            };
+            event.currentTarget.setPointerCapture(event.pointerId);
+            event.currentTarget.classList.add("is-dragging");
+          }}
+          onPointerLeave={(event) => {
+            dragState.current.active = false;
+            event.currentTarget.classList.remove("is-dragging");
+          }}
+          onPointerMove={(event) => {
+            if (!dragState.current.active) return;
+            event.preventDefault();
+            event.currentTarget.scrollLeft =
+              dragState.current.scrollLeft - (event.clientX - dragState.current.startX);
+          }}
+          onPointerUp={(event) => {
+            dragState.current.active = false;
+            event.currentTarget.classList.remove("is-dragging");
+          }}
+        >
+          {items.map((item) => (
             <article className="home-priority-item" key={item.id}>
               <FruitAvatar fruit={item.modelLabel} label={item.displayName} size="sm" />
               <div>

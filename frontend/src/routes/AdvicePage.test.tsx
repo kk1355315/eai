@@ -63,4 +63,50 @@ describe("AdvicePage", () => {
       screen.queryByText("Use your confirmed fruit inventory as the source of truth for now."),
     ).toBeNull();
   });
+
+  it("groups duplicate shopping suggestions into one compact card", () => {
+    mockUseShoppingAdvice.mockReturnValue({
+      data: {
+        recommendations: [
+          {
+            title: "Apple no duplicate purchase",
+            content: "Apple inventory is still available.",
+            action_type: "avoid_duplicate_purchase",
+            related_foods: ["apple"],
+            basis: ["Apple is available."],
+            evidence_ids: ["evidence-apple"],
+            confidence: "high",
+          },
+          {
+            title: "Banana no duplicate purchase",
+            content: "Banana inventory is still available.",
+            action_type: "avoid_duplicate_purchase",
+            related_foods: ["banana"],
+            basis: ["Banana is available."],
+            evidence_ids: ["evidence-banana"],
+            confidence: "high",
+          },
+          {
+            title: "Pear no duplicate purchase",
+            content: "Pear inventory is still available.",
+            action_type: "avoid_duplicate_purchase",
+            related_foods: ["pear"],
+            basis: ["Pear is available."],
+            evidence_ids: ["evidence-pear"],
+            confidence: "high",
+          },
+        ],
+      },
+      error: null,
+      isError: false,
+      isLoading: false,
+      refetch: vi.fn(),
+    } as never);
+
+    renderWithProviders(<AdvicePage />, { language: "zh" });
+
+    expect(screen.getByText("苹果、香蕉、梨 暂时不用重复购买")).toBeTruthy();
+    expect(screen.queryByText("Apple no duplicate purchase")).toBeNull();
+    expect(screen.getByRole("heading", { name: "询问建议" })).toBeTruthy();
+  });
 });

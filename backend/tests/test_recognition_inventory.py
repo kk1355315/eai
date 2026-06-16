@@ -248,6 +248,40 @@ def test_storage_states_use_thresholds_and_fixed_check_message() -> None:
     assert states["apple"]["eat_priority_rank"] is None
 
 
+def test_confirm_change_can_snooze_check_required_inventory() -> None:
+    with TestClient(app) as client:
+        client.post(
+            "/recognitions",
+            json=_recognition_payload(counts={"apple": 1}),
+        )
+        item = client.get("/inventory").json()[0]
+        client.post(f"/inventory/{item['id']}/confirm-change", json={})
+
+        _set_inventory_age(
+            "apple",
+            "pantry",
+            days_ago=_safe_days("apple", "pantry") + 1,
+        )
+        check_item = client.get("/inventory/storage-states").json()[0]
+        response = client.post(
+            f"/inventory/{check_item['id']}/confirm-change",
+            json={
+                "new_quantity": check_item["confirmed_quantity"],
+                "status": "available",
+                "snooze_days": 3,
+            },
+        )
+        after = client.get("/inventory/storage-states").json()[0]
+
+    assert response.status_code == 200
+    assert response.json()["check_snoozed_until"] is not None
+    assert response.json()["storage_state"] == "eat_soon"
+    assert response.json()["remaining_days"] == 3
+    assert response.json()["message"] is None
+    assert after["storage_state"] == "eat_soon"
+    assert after["message"] is None
+
+
 def test_get_image_returns_capture_image_metadata() -> None:
     with TestClient(app) as client:
         recognition = client.post("/recognitions", json=_recognition_payload())

@@ -45,7 +45,7 @@ export function NeedCheckList({ items }: NeedCheckListProps) {
 function formatCheckMeta(days: number | null | undefined, language: "en" | "zh") {
   if (language === "zh") {
     if (days == null || days <= 0) {
-      return "已超过参考保存期，请检查外观、气味和实际状态后决定。";
+      return "已超过参考保存期";
     }
     return `参考保存期还剩 ${days} 天`;
   }

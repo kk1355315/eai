@@ -64,6 +64,25 @@
   padding: 0 42px;
 }
 
+.inventory-list + .inventory-list {
+  margin-top: 26px;
+}
+
+.inventory-list-title {
+  margin: 30px 0 4px;
+  color: #0c192a;
+  font-size: 30px;
+  font-weight: 760;
+  line-height: 36px;
+}
+
+.inventory-list-empty {
+  margin: 0 0 30px;
+  color: #7d889d;
+  font-size: 20px;
+  line-height: 30px;
+}
+
 .inventory-row {
   display: grid;
   grid-template-columns: 96px minmax(0, 1fr) 210px;
@@ -79,7 +98,7 @@
 }
 
 .inventory-row:first-child {
-  border-top: 0;
+  border-top: 1px solid #e6ecf4;
 }
 
 .inventory-food-image {
@@ -227,6 +246,20 @@
   justify-items: stretch;
 }
 
+.inventory-confirm-controls.mode-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+  align-self: center;
+}
+
+.inventory-confirm-controls.mode-collapsed button {
+  min-height: 58px;
+}
+
+.inventory-confirm-controls.mode-check {
+  grid-template-columns: minmax(0, 1fr);
+  align-self: center;
+}
+
 .inventory-confirm-controls label {
   display: block;
   min-width: 0;
@@ -271,6 +304,31 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 7px;
+}
+
+.inventory-event-quantity {
+  grid-column: 1 / -1;
+}
+
+.inventory-check-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.inventory-check-actions > button {
+  min-height: 48px;
+  padding: 0 8px;
+  color: #2584ff;
+  background: rgba(37, 132, 255, 0.1);
+  font-size: 14px;
+}
+
+.inventory-snooze-controls {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
 }
 
 .inventory-event-controls button {
@@ -436,5 +494,9 @@
 
   .inventory-event-controls {
     grid-column: 1 / -1;
+  }
+
+  .inventory-check-actions {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

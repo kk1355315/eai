@@ -117,6 +117,7 @@ describe("inventory api", () => {
       new_quantity: 1,
       status: "available",
       as_new_batch: false,
+      snooze_days: 3,
     });
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
@@ -127,6 +128,7 @@ describe("inventory api", () => {
         new_quantity: 1,
         status: "available",
         as_new_batch: false,
+        snooze_days: 3,
       }),
     );
   });
