@@ -19,12 +19,12 @@ from app.routers.inventory import _refresh_storage_states
 ACTIVE_INVENTORY_STATUSES = {"available", "pending_confirm"}
 SEARCH_SECTION_LIMITS = {
     "inventory": 4,
-    "storage_rules": 8,
+    "storage_rules": 4,
     "nutrition_facts": 4,
-    "guideline_rules": 4,
-    "habits": 3,
+    "guideline_rules": 3,
+    "habits": 2,
 }
-SEARCH_TOTAL_LIMIT = 24
+SEARCH_TOTAL_LIMIT = 14
 QUERY_ALIASES = {
     "苹果": ["apple"],
     "香蕉": ["banana"],
@@ -34,6 +34,8 @@ QUERY_ALIASES = {
     "减糖": ["sugar", "少糖", "糖"],
     "库存": ["confirmed_quantity", "available", "storage_state"],
     "补买": ["shopping", "购买", "买"],
+    "今天": ["fresh", "eat_soon"],
+    "吃": ["fresh", "eat_soon", "fruit_intake"],
 }
 
 
@@ -59,6 +61,10 @@ def build_advice_context(session: Session, query: str | None = None) -> dict[str
     context: dict[str, Any] = {
         "profile": _profile_payload(profile),
         "supported_foods": [food.model_label for food in foods],
+        "food_aliases": {
+            food.model_label: sorted(_food_aliases(food))
+            for food in foods
+        },
         "inventory": [_inventory_payload(item, food_by_id[item.food_item_id]) for item in inventory],
         "storage_rules": [_storage_rule_payload(rule, food_by_id[rule.food_item_id]) for rule in storage_rules],
         "nutrition_facts": [
@@ -75,14 +81,18 @@ def build_advice_context(session: Session, query: str | None = None) -> dict[str
             "profile": context["profile"],
             "profile_blocked_foods": context["profile_blocked_foods"],
             "supported_foods": context["supported_foods"],
+            "food_aliases": context["food_aliases"],
             "search_query": query,
-            "search_results": results,
+            "search_results": _search_result_refs(results),
         }
         for section in SEARCH_SECTION_LIMITS:
             trimmed[section] = [
                 result["item"] for result in results if result["section"] == section
             ]
-        trimmed["evidence_hints"] = _evidence_hints(trimmed)
+        trimmed["evidence_hints"] = _filter_hints_for_query(
+            _evidence_hints(trimmed),
+            query,
+        )
         return trimmed
     return context
 
@@ -108,6 +118,7 @@ def search_evidence(context: dict[str, Any], query: str) -> list[dict[str, Any]]
         section_candidates.sort(key=lambda item: item["score"], reverse=True)
         candidates.extend(section_candidates[:limit])
 
+    candidates = _expand_intent_evidence_coverage(context, query, candidates)
     candidates = _expand_food_evidence_coverage(context, query, candidates)
     candidates.sort(key=lambda item: (item["score"], -_section_order(item["section"])), reverse=True)
     return candidates[:SEARCH_TOTAL_LIMIT]
@@ -179,6 +190,17 @@ def _evidence_hints(context: dict[str, Any]) -> list[dict[str, Any]]:
                     ),
                 }
             )
+    return hints
+
+
+def _filter_hints_for_query(hints: list[dict[str, Any]], query: str) -> list[dict[str, Any]]:
+    allowed_actions: set[str] = set()
+    if _is_eating_query(query):
+        allowed_actions.add("eat_first")
+    if _is_shopping_query(query):
+        allowed_actions.add("avoid_duplicate_purchase")
+    if allowed_actions:
+        return [hint for hint in hints if hint.get("action_type") in allowed_actions]
     return hints
 
 
@@ -362,6 +384,110 @@ def _query_tokens(query: str) -> list[str]:
     return list(dict.fromkeys(tokens))
 
 
+def _search_result_refs(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    refs: list[dict[str, Any]] = []
+    for result in results:
+        item = result["item"]
+        refs.append(
+            {
+                "section": result["section"],
+                "score": result["score"],
+                "evidence_id": item.get("evidence_id"),
+                "food": item.get("food"),
+            }
+        )
+    return refs
+
+
+def _expand_intent_evidence_coverage(
+    context: dict[str, Any],
+    query: str,
+    candidates: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    expanded = list(candidates)
+    if _is_eating_query(query):
+        priority_items = [
+            item
+            for item in context.get("inventory", [])
+            if item.get("status") == "available"
+            and int(item.get("confirmed_quantity") or 0) > 0
+            and item.get("storage_state") in {"fresh", "eat_soon"}
+        ]
+        priority_items.sort(
+            key=lambda item: (
+                0 if item.get("storage_state") == "eat_soon" else 1,
+                item.get("remaining_days") if item.get("remaining_days") is not None else 9999,
+                -int(item.get("confirmed_quantity") or 0),
+            )
+        )
+        for item in priority_items[: SEARCH_SECTION_LIMITS["inventory"]]:
+            _append_candidate(expanded, "inventory", 120, item)
+        _expand_for_candidate_foods(context, expanded, 90, include_shopping=False)
+
+    if _is_shopping_query(query):
+        requested_foods = _query_food_labels(context, query)
+        stocked_items = [
+            item
+            for item in context.get("inventory", [])
+            if item.get("status") == "available" and int(item.get("confirmed_quantity") or 0) > 0
+            and (not requested_foods or item.get("food") in requested_foods)
+        ]
+        for item in stocked_items[: SEARCH_SECTION_LIMITS["inventory"]]:
+            _append_candidate(expanded, "inventory", 110, item)
+        _expand_for_candidate_foods(context, expanded, 85, include_shopping=True)
+
+    return expanded
+
+
+def _expand_for_candidate_foods(
+    context: dict[str, Any],
+    candidates: list[dict[str, Any]],
+    score: int,
+    *,
+    include_shopping: bool,
+) -> None:
+    foods = {
+        candidate["item"].get("food")
+        for candidate in candidates
+        if candidate["section"] == "inventory" and candidate["item"].get("food")
+    }
+    if not foods:
+        return
+
+    current_storage_pairs = {
+        (item.get("food"), item.get("storage_location"))
+        for item in context.get("inventory", [])
+        if item.get("food") in foods and item.get("storage_location")
+    }
+    for item in context.get("storage_rules", []):
+        if len([c for c in candidates if c["section"] == "storage_rules"]) >= SEARCH_SECTION_LIMITS["storage_rules"]:
+            break
+        if (item.get("food"), item.get("storage_location")) in current_storage_pairs:
+            _append_candidate(candidates, "storage_rules", score, item)
+
+    for item in context.get("nutrition_facts", []):
+        if len([c for c in candidates if c["section"] == "nutrition_facts"]) >= SEARCH_SECTION_LIMITS["nutrition_facts"]:
+            break
+        if item.get("food") in foods:
+            _append_candidate(candidates, "nutrition_facts", score - 5, item)
+
+    allowed_rule_types = {"fruit_intake", "diversity", "sugar_moderation"}
+    if include_shopping:
+        for item in context.get("guideline_rules", []):
+            if str(item.get("rule_type")) == "shopping_duplicate":
+                _append_candidate(candidates, "guideline_rules", score, item)
+                break
+        allowed_rule_types.add("shopping_duplicate")
+    for item in context.get("guideline_rules", []):
+        if len([c for c in candidates if c["section"] == "guideline_rules"]) >= SEARCH_SECTION_LIMITS["guideline_rules"]:
+            break
+        rule_type = str(item.get("rule_type"))
+        if rule_type in allowed_rule_types and (
+            rule_type == "shopping_duplicate" or _rule_applies_to_food(item, foods)
+        ):
+            _append_candidate(candidates, "guideline_rules", score - 10, item)
+
+
 def _expand_food_evidence_coverage(
     context: dict[str, Any],
     query: str,
@@ -405,6 +531,14 @@ def _expand_food_evidence_coverage(
                     section_counts[section] = section_counts.get(section, 0) + 1
 
     return expanded
+
+
+def _is_eating_query(query: str) -> bool:
+    return any(term in query.lower() for term in ("今天", "吃", "食用", "早餐", "午餐", "晚餐", "加餐", "eat", "snack"))
+
+
+def _is_shopping_query(query: str) -> bool:
+    return any(term in query.lower() for term in ("买", "购买", "补买", "补货", "购物", "buy", "purchase"))
 
 
 def _query_food_labels(context: dict[str, Any], query: str) -> set[str]:

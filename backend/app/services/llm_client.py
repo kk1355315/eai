@@ -19,15 +19,45 @@ def request_llm_json(
     if not settings.llm_api_key:
         raise LlmClientError("LLM_API_KEY is not configured.")
 
-    payload: dict[str, Any] = {
-        "model": settings.llm_model,
-        "messages": [
+    data = request_chat_completion(
+        messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
+        enable_thinking=enable_thinking,
+        response_format={"type": "json_object"},
+    )
+
+    try:
+        content = data["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError) as exc:
+        raise LlmClientError("LLM response missing choices[0].message.content.") from exc
+
+    return _parse_json_content(content)
+
+
+def request_chat_completion(
+    *,
+    messages: list[dict[str, Any]],
+    enable_thinking: bool,
+    tools: list[dict[str, Any]] | None = None,
+    tool_choice: str | dict[str, Any] | None = None,
+    response_format: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    if not settings.llm_api_key:
+        raise LlmClientError("LLM_API_KEY is not configured.")
+
+    payload: dict[str, Any] = {
+        "model": settings.llm_model,
+        "messages": messages,
         "temperature": 0.2,
-        "response_format": {"type": "json_object"},
     }
+    if tools is not None:
+        payload["tools"] = tools
+    if tool_choice is not None:
+        payload["tool_choice"] = tool_choice
+    if response_format is not None:
+        payload["response_format"] = response_format
     if enable_thinking:
         payload["extra_body"] = {"enable_thinking": True}
 
@@ -42,14 +72,7 @@ def request_llm_json(
             response.raise_for_status()
     except httpx.HTTPError as exc:
         raise LlmClientError(f"LLM request failed: {exc}") from exc
-
-    data = response.json()
-    try:
-        content = data["choices"][0]["message"]["content"]
-    except (KeyError, IndexError, TypeError) as exc:
-        raise LlmClientError("LLM response missing choices[0].message.content.") from exc
-
-    return _parse_json_content(content)
+    return response.json()
 
 
 def _parse_json_content(content: str | dict[str, Any]) -> dict[str, Any]:

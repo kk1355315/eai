@@ -22,6 +22,7 @@ from app.models import (
 from app.config import settings
 from app.routers.inventory import CHECK_REQUIRED_MESSAGE, _refresh_storage_states
 from app.services.advice_context import build_advice_context, collect_evidence_ids, search_evidence
+from app.services.advice_agent import request_agent_advice_json
 from app.services.llm_client import LlmClientError, request_llm_json
 from app.services.prompts import SYSTEM_PROMPT, build_user_prompt
 
@@ -304,14 +305,18 @@ def validate_llm_advice(payload: LlmAdviceRequest, session: SessionDep) -> LlmAd
 def generate_llm_advice(
     payload: LlmGenerateRequest, session: SessionDep
 ) -> LlmAdviceResponse:
-    context = build_advice_context(session, payload.search_query)
     enable_thinking = (
         settings.llm_enable_thinking_default
         if payload.enable_thinking is None
         else payload.enable_thinking
     )
     try:
-        advice = _request_llm_advice(context, payload.question, enable_thinking)
+        advice = _request_llm_advice(
+            session,
+            payload.question,
+            payload.search_query,
+            enable_thinking,
+        )
     except (LlmClientError, ValueError) as exc:
         return LlmAdviceResponse(
             accepted=False,
@@ -326,8 +331,9 @@ def generate_llm_advice(
     if errors:
         try:
             advice = _request_llm_advice(
-                context,
+                session,
                 payload.question,
+                payload.search_query,
                 enable_thinking,
                 validation_errors=errors,
             )
@@ -452,11 +458,10 @@ def _validate_llm_output(advice: LlmAdvicePayload, context: dict[str, Any]) -> l
         actions = _effective_action_types(item)
         evidence_types = _evidence_types(item.evidence_ids)
         item_text = _item_text(item)
-        mentioned_blocked_foods = _mentioned_food_labels(
+        mentioned_unavailable_foods = _mentioned_food_labels(
             item_text,
-            context["blocked_food_aliases"],
+            context["unavailable_food_aliases"],
         )
-
         if _contains_unsafe_text(item_text):
             errors.append(f"{prefix} contains unsafe medical, spoilage, or database wording")
         if not item.evidence_ids:
@@ -472,11 +477,26 @@ def _validate_llm_output(advice: LlmAdvicePayload, context: dict[str, Any]) -> l
             if food in context["profile_blocked_foods"]:
                 errors.append(f"{prefix} recommends profile-blocked food: {food}")
         if _is_food_recommendation(item):
-            blocked_food_mentions = (
-                set(item.related_foods) | mentioned_blocked_foods
-            ) & context["blocked_foods"]
-            for food in sorted(blocked_food_mentions):
-                errors.append(f"{prefix} recommends checked food for eating: {food}")
+            inventory_ids = [
+                evidence_id
+                for evidence_id in _inventory_evidence_ids(item.evidence_ids)
+                if evidence_id in context["inventory_by_evidence_id"]
+            ]
+            for evidence_id in inventory_ids:
+                batch = context["inventory_by_evidence_id"].get(evidence_id)
+                if batch is None:
+                    continue
+                if batch["storage_state"] in {"check_required", "not_recommended"}:
+                    errors.append(
+                        f"{prefix} recommends checked food batch for eating: "
+                        f"{batch['food']} ({evidence_id})"
+                    )
+            if not inventory_ids:
+                unavailable_food_mentions = (
+                    set(item.related_foods) | mentioned_unavailable_foods
+                ) & context["foods_without_edible_batches"]
+                for food in sorted(unavailable_food_mentions):
+                    errors.append(f"{prefix} recommends checked food for eating: {food}")
         if _conflicts_with_cooking_condition(item_text, profile):
             errors.append(f"{prefix} conflicts with cooking condition: {profile.get('cooking_condition')}")
         if _conflicts_with_sugar_sensitive_profile(item.related_foods, item_text, profile):
@@ -534,24 +554,37 @@ def _validate_llm_output(advice: LlmAdvicePayload, context: dict[str, Any]) -> l
 
 
 def _request_llm_advice(
-    context: dict[str, Any],
+    session: Session,
     question: str | None,
+    search_query: str | None,
     enable_thinking: bool,
     validation_errors: list[str] | None = None,
 ) -> LlmAdvicePayload:
-    user_prompt = build_user_prompt(context, question, validation_errors=validation_errors)
-    raw_output = request_llm_json(
-        system_prompt=SYSTEM_PROMPT,
-        user_prompt=user_prompt,
-        enable_thinking=enable_thinking,
-    )
+    if getattr(request_llm_json, "__module__", "") != "app.services.llm_client":
+        context = build_advice_context(session, search_query or question)
+        user_prompt = build_user_prompt(context, question, validation_errors=validation_errors)
+        raw_output = request_llm_json(
+            system_prompt=SYSTEM_PROMPT,
+            user_prompt=user_prompt,
+            enable_thinking=enable_thinking,
+        )
+    else:
+        raw_output = request_agent_advice_json(
+            session=session,
+            question=question,
+            search_query=search_query,
+            enable_thinking=enable_thinking,
+            validation_errors=validation_errors,
+        )
     return LlmAdvicePayload.model_validate(raw_output)
 
 
 def _enrich_llm_evidence(
     advice: LlmAdvicePayload, context: dict[str, Any]
 ) -> LlmAdvicePayload:
-    known_evidence_ids = context["evidence_ids"]
+    known_evidence_ids = context.get("evidence_ids")
+    if known_evidence_ids is None:
+        known_evidence_ids = collect_evidence_ids(context)
     for item in advice.recommendations:
         inferred_foods = _infer_item_foods(item, context)
         if inferred_foods:
@@ -622,12 +655,19 @@ def _store_checked_advice(advice: LlmAdvicePayload, session: Session) -> LlmAdvi
     context = _advice_context(session)
     errors = _validate_llm_output(advice, context)
     if errors:
-        return LlmAdviceResponse(
-            accepted=False,
-            errors=errors,
-            advice=_fallback_advice(session),
-            record_id=None,
-        )
+        repaired = _drop_invalid_recommendations(advice, errors)
+        if repaired is not advice and repaired.recommendations:
+            repaired_errors = _validate_llm_output(repaired, context)
+            if not repaired_errors:
+                advice = repaired
+                errors = []
+        if errors:
+            return LlmAdviceResponse(
+                accepted=False,
+                errors=errors,
+                advice=_fallback_advice(session),
+                record_id=None,
+            )
 
     evidence_ids = sorted(
         {
@@ -654,6 +694,26 @@ def _store_checked_advice(advice: LlmAdvicePayload, session: Session) -> LlmAdvi
     session.commit()
     session.refresh(record)
     return LlmAdviceResponse(accepted=True, errors=[], advice=advice, record_id=record.id)
+
+
+def _drop_invalid_recommendations(
+    advice: LlmAdvicePayload, errors: list[str]
+) -> LlmAdvicePayload:
+    invalid_indexes: set[int] = set()
+    for error in errors:
+        match = re.match(r"recommendations\[(\d+)\]", error)
+        if match is not None:
+            invalid_indexes.add(int(match.group(1)))
+    if not invalid_indexes:
+        return advice
+    return LlmAdvicePayload(
+        summary=advice.summary,
+        recommendations=[
+            item
+            for index, item in enumerate(advice.recommendations)
+            if index not in invalid_indexes
+        ],
+    )
 
 
 def _attach_evidence_sources(advice: LlmAdvicePayload, session: Session) -> LlmAdvicePayload:
@@ -761,13 +821,31 @@ def _advice_context(session: Session) -> dict[str, Any]:
     _refresh_storage_states(session, inventory)
     session.commit()
     food_by_id = {food.id: food for food in foods}
-    blocked_foods = {
+    inventory_by_evidence_id = {
+        item.evidence_id: {
+            "food": food_by_id[item.food_item_id].model_label,
+            "status": item.status,
+            "confirmed_quantity": item.confirmed_quantity,
+            "storage_state": item.storage_state,
+        }
+        for item in inventory
+        if item.evidence_id
+    }
+    checked_foods = {
         food_by_id[item.food_item_id].model_label
         for item in inventory
         if item.status == "available"
         and item.confirmed_quantity > 0
         and item.storage_state in {"check_required", "not_recommended"}
     }
+    edible_foods = {
+        food_by_id[item.food_item_id].model_label
+        for item in inventory
+        if item.status == "available"
+        and item.confirmed_quantity > 0
+        and item.storage_state in {"fresh", "eat_soon"}
+    }
+    foods_without_edible_batches = checked_foods - edible_foods
     stocked_foods = {
         food_by_id[item.food_item_id].model_label
         for item in inventory
@@ -778,11 +856,12 @@ def _advice_context(session: Session) -> dict[str, Any]:
     return {
         "evidence_ids": collect_evidence_ids(context),
         "supported_foods": {food.model_label for food in foods},
-        "blocked_foods": blocked_foods,
-        "blocked_food_aliases": {
+        "inventory_by_evidence_id": inventory_by_evidence_id,
+        "foods_without_edible_batches": foods_without_edible_batches,
+        "unavailable_food_aliases": {
             food.model_label: _food_aliases(food)
             for food in foods
-            if food.model_label in blocked_foods
+            if food.model_label in foods_without_edible_batches
         },
         "food_aliases": {
             food.model_label: _food_aliases(food)
@@ -837,6 +916,10 @@ def _evidence_types(evidence_ids: list[str]) -> set[str]:
         if prefix in {"inventory", "storage", "nutri", "rule", "habit"}:
             types.add(prefix)
     return types
+
+
+def _inventory_evidence_ids(evidence_ids: list[str]) -> list[str]:
+    return [evidence_id for evidence_id in evidence_ids if evidence_id.startswith("inventory_")]
 
 
 def _require_evidence_types(
