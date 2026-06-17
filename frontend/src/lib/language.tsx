@@ -151,7 +151,7 @@ const translations = {
     askAi: "询问建议",
     askAdvice: "询问建议",
     askAdviceCopy: "根据当前水果获得个性化建议。",
-    askAdvicePlaceholder: "询问今日水果、餐食或下一次采购。",
+    askAdvicePlaceholder: "询问今天吃什么",
     ate: "已食用",
     avoid: "避免",
     backToday: "返回今日",
