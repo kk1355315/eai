@@ -3,6 +3,7 @@ import { Search, Send, Sparkles } from "lucide-react";
 import { GlassCard } from "../ui/GlassCard";
 import { AdviceCard, type AdviceItem } from "./AdviceCard";
 import { useLanguage } from "../../lib/language";
+import stylesModule from "./AskAiPanel.module.css";
 
 export type AskAiRequest = {
   question?: string;
@@ -30,6 +31,8 @@ type AskAiPanelProps = {
 const styles = {
   card: {
     padding: "48px 42px 52px",
+    color: "#07152f",
+    opacity: 1,
   },
   header: {
     display: "flex",
@@ -57,6 +60,7 @@ const styles = {
   form: {
     display: "grid",
     gap: 24,
+    opacity: 1,
   },
   textarea: {
     width: "100%",
@@ -87,7 +91,7 @@ const styles = {
     border: "1px solid rgba(143, 164, 194, 0.22)",
     borderRadius: 16,
     padding: "20px 22px",
-    color: "#8a98b3",
+    color: "#2584ff",
     background: "rgba(255, 255, 255, 0.58)",
   },
   input: {
@@ -103,7 +107,7 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: 12,
-    color: "#697895",
+    color: "#07152f",
     fontSize: 21,
     lineHeight: 1.35,
   },
@@ -125,8 +129,33 @@ const styles = {
     cursor: "pointer",
   },
   buttonDisabled: {
-    opacity: 0.62,
+    opacity: 0.86,
     cursor: "default",
+  },
+  thinkingStatus: {
+    display: "grid",
+    gridTemplateColumns: "42px 1fr",
+    alignItems: "center",
+    gap: 14,
+    border: "1px solid rgba(37, 132, 255, 0.18)",
+    borderRadius: 16,
+    padding: "16px 18px",
+    color: "#254063",
+    background: "rgba(37, 132, 255, 0.08)",
+    fontSize: 18,
+    lineHeight: 1.45,
+    fontWeight: 720,
+    overflow: "hidden",
+  },
+  thinkingOrb: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    display: "grid",
+    placeItems: "center",
+    color: "#2584ff",
+    background: "rgba(255, 255, 255, 0.72)",
+    boxShadow: "0 10px 26px rgba(37, 132, 255, 0.16)",
   },
   result: {
     display: "grid",
@@ -186,6 +215,7 @@ export function AskAiPanel({ result, isPending = false, onSubmit }: AskAiPanelPr
       </div>
       <form style={styles.form} onSubmit={handleSubmit}>
         <textarea
+          className={stylesModule.textarea}
           style={styles.textarea}
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
@@ -195,6 +225,7 @@ export function AskAiPanel({ result, isPending = false, onSubmit }: AskAiPanelPr
           <label style={styles.inputWrap}>
             <Search size={21} strokeWidth={2.1} aria-hidden="true" />
             <input
+              className={stylesModule.input}
               style={styles.input}
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
@@ -219,6 +250,26 @@ export function AskAiPanel({ result, isPending = false, onSubmit }: AskAiPanelPr
           />
           {t("moreCarefulReasoning")}
         </label>
+        {isPending ? (
+          <div
+            className={stylesModule.thinkingStatus}
+            style={styles.thinkingStatus}
+            role="status"
+            aria-live="polite"
+          >
+            <span className={stylesModule.thinkingOrb} style={styles.thinkingOrb} aria-hidden="true">
+              <Sparkles size={19} strokeWidth={2.25} />
+            </span>
+            <span>
+              {t("thinkingAboutAdvice")}
+              <span className={stylesModule.dots} aria-hidden="true">
+                <span />
+                <span />
+                <span />
+              </span>
+            </span>
+          </div>
+        ) : null}
       </form>
 
       {result ? (

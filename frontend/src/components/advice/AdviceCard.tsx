@@ -62,7 +62,7 @@ const styles = {
   },
   content: {
     margin: 0,
-    color: "#697895",
+    color: "#07152f",
     fontSize: 20,
     lineHeight: 1.58,
   },
@@ -75,8 +75,8 @@ const styles = {
   pill: {
     borderRadius: 10,
     padding: "8px 12px",
-    color: "#697895",
-    background: "rgba(255, 255, 255, 0.66)",
+    color: "#07152f",
+    background: "rgba(37, 132, 255, 0.09)",
     fontSize: 16,
     lineHeight: 1.25,
   },
@@ -96,7 +96,7 @@ const styles = {
   },
   evidenceText: {
     margin: 0,
-    color: "#697895",
+    color: "#07152f",
     fontSize: 17,
     lineHeight: 1.55,
   },
@@ -118,7 +118,7 @@ const styles = {
   },
   sourceMeta: {
     margin: 0,
-    color: "#8a98b3",
+    color: "#34445f",
     fontSize: 13,
     lineHeight: 1.35,
   },
