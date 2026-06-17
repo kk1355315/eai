@@ -49,6 +49,13 @@ describe("AskAiPanel", () => {
     expect(screen.getByText("Use confirmed inventory as the source of truth.")).toBeTruthy();
   });
 
+  it("shows an active thinking status while a request is pending", () => {
+    renderWithProviders(<AskAiPanel onSubmit={vi.fn()} isPending />);
+
+    expect(screen.getByRole("status")).toHaveTextContent(/thinking through your advice/i);
+    expect(screen.getByRole("button", { name: /send advice request/i })).toBeDisabled();
+  });
+
   it("renders AI recommendation cards inline inside the result panel", () => {
     const { container } = renderWithProviders(
       <AskAiPanel
