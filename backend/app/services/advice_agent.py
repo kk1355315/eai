@@ -396,9 +396,7 @@ def _content_from_selection(candidate: dict[str, Any], reason: str, action_type:
     state = batch.get("storage_state")
     remaining = batch.get("remaining_days")
     sentence_reason = _strip_sentence_end(reason)
-    fact = f"当前有{quantity}{unit}{display_name}，状态 {state}"
-    if remaining is not None:
-        fact += f"，剩余 {remaining} 天"
+    fact = _batch_fact(display_name, quantity, unit, state, remaining)
     if action_type == "portion_control":
         return _compact_text(f"{sentence_reason}。{display_name}可以少量搭配。", 80)
     return _compact_text(f"{sentence_reason}。{fact}。", 90)
@@ -410,9 +408,9 @@ def _basis_from_selection(candidate: dict[str, Any], reason: str) -> list[str]:
     state = batch.get("storage_state")
     remaining = batch.get("remaining_days")
     if state:
-        text = f"库存批次状态为 {state}"
+        text = f"这批{_state_label(state)}"
         if remaining is not None:
-            text += f"，剩余 {remaining} 天"
+            text += f"，{_remaining_text(remaining)}"
         basis.append(text)
     return [item for item in basis if item][:2]
 
@@ -440,9 +438,9 @@ def _batch_reason(batch: dict[str, Any]) -> str:
     state = batch.get("storage_state")
     remaining = batch.get("remaining_days")
     if state == "eat_soon":
-        return f"{display_name}处于 eat_soon，适合优先安排"
+        return f"{display_name}快到建议食用时间，适合优先安排"
     if remaining is not None:
-        return f"{display_name}当前可食用，剩余 {remaining} 天"
+        return f"{display_name}当前可食用，{_remaining_text(remaining)}"
     return f"{display_name}当前有可食用库存"
 
 
@@ -455,6 +453,60 @@ def _compact_text(value: str, limit: int) -> str:
 
 def _strip_sentence_end(value: str) -> str:
     return value.rstrip("，。；,. ")
+
+
+def _batch_fact(
+    display_name: str,
+    quantity: Any,
+    unit: Any,
+    state: Any,
+    remaining: Any,
+) -> str:
+    parts = [f"现在还有{_quantity_text(quantity, unit)}{display_name}"]
+    if state:
+        parts.append(_state_label(state))
+    if remaining is not None:
+        parts.append(_remaining_text(remaining))
+    return "，".join(parts)
+
+
+def _quantity_text(quantity: Any, unit: Any) -> str:
+    if quantity is None:
+        return ""
+    return f"{quantity}{_unit_label(unit)}"
+
+
+def _unit_label(unit: Any) -> str:
+    labels = {
+        "piece": "个",
+        "pieces": "个",
+        "count": "个",
+        "g": "克",
+        "gram": "克",
+        "grams": "克",
+        "kg": "千克",
+    }
+    return labels.get(str(unit or "").lower(), str(unit or ""))
+
+
+def _state_label(state: Any) -> str:
+    labels = {
+        "fresh": "状态还新鲜",
+        "eat_soon": "建议尽快吃",
+        "check_required": "需要先检查状态",
+        "not_recommended": "不建议直接吃",
+    }
+    return labels.get(str(state or ""), "状态待确认")
+
+
+def _remaining_text(remaining: Any) -> str:
+    try:
+        days = int(remaining)
+    except (TypeError, ValueError):
+        return f"建议食用期还剩{remaining}天"
+    if days <= 0:
+        return "今天就该优先吃"
+    return f"建议食用期还剩{days}天"
 
 
 def _as_list(value: Any) -> list[Any]:
@@ -840,8 +892,8 @@ def _nutrition_note(nutrition: dict[str, Any] | None) -> str | None:
 
 def _eating_reason(item: InventoryItem, food: FoodItem) -> str:
     if item.storage_state == "eat_soon":
-        return f"{food.display_name}处于 eat_soon，剩余 {item.remaining_days} 天。"
-    return f"{food.display_name}处于 fresh，可作为搭配。"
+        return f"{food.display_name}建议尽快吃，{_remaining_text(item.remaining_days)}。"
+    return f"{food.display_name}状态还新鲜，可作为搭配。"
 
 
 def _compact_ids(values: list[str | None]) -> list[str]:

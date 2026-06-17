@@ -114,7 +114,11 @@ def test_selection_plan_filters_evidence_outside_candidate() -> None:
         "nutri_pear_usda",
     ]
     assert "梨含水多" in item["content"]
+    assert "现在还有2个梨" in item["content"]
+    assert "eat_soon" not in item["content"]
+    assert "piece" not in item["content"]
     assert "梨含水多" in item["basis"][0]
+    assert item["basis"][1] == "这批建议尽快吃，今天就该优先吃"
 
 
 def _tool_call(call_id: str, name: str, arguments: dict) -> dict:
