@@ -395,12 +395,13 @@ def _content_from_selection(candidate: dict[str, Any], reason: str, action_type:
     unit = batch.get("unit") or ""
     state = batch.get("storage_state")
     remaining = batch.get("remaining_days")
+    sentence_reason = _strip_sentence_end(reason)
     fact = f"当前有{quantity}{unit}{display_name}，状态 {state}"
     if remaining is not None:
         fact += f"，剩余 {remaining} 天"
     if action_type == "portion_control":
-        return _compact_text(f"{reason}。{display_name}可以少量搭配。", 80)
-    return _compact_text(f"{reason}。{fact}。", 90)
+        return _compact_text(f"{sentence_reason}。{display_name}可以少量搭配。", 80)
+    return _compact_text(f"{sentence_reason}。{fact}。", 90)
 
 
 def _basis_from_selection(candidate: dict[str, Any], reason: str) -> list[str]:
@@ -450,6 +451,10 @@ def _compact_text(value: str, limit: int) -> str:
     if len(text) <= limit:
         return text
     return text[: limit - 1].rstrip("，。；,. ") + "。"
+
+
+def _strip_sentence_end(value: str) -> str:
+    return value.rstrip("，。；,. ")
 
 
 def _as_list(value: Any) -> list[Any]:
