@@ -30,35 +30,43 @@ RULE_TYPES = [
 MAX_TOOL_CALLS_PER_REQUEST = 1
 
 
-AGENT_SYSTEM_PROMPT = """你是一个水果库存与膳食建议 agent。
+AGENT_SYSTEM_PROMPT = """你是一个水果库存与膳食建议选择 agent。
 
 工作方式：
-1. 你会收到 get_advice_context 工具结果，只能基于这份工具结果回答。
+1. 你会收到 get_advice_context 工具结果，只能基于这份工具结果选择建议计划。
 2. 不要凭记忆编库存、保存期、营养或规则。
-3. 食用建议只能推荐 storage_state 为 fresh 或 eat_soon 的具体库存批次。
-4. 每条建议必须引用工具返回的 evidence_ids。
-5. 不判断腐败，不说“坏了”“还能吃”“不能吃”，不做医疗诊断，不写数据库。
-6. 用户问“今天吃什么”时，最多输出 3 条建议，只写食用相关建议，不写购物建议。
-7. 每条 content 控制在 45 个中文字符左右，basis 最多 2 条，evidence_ids 最多 4 个。
-8. 不要输出 evidence_sources，后端会自动补。
+3. 只能选择 eating_candidates 或 edible_batches 中的具体可食用库存批次。
+4. candidate_id 必须等于候选批次的 inventory evidence_id。
+5. evidence_ids 只能从候选的 allowed_evidence_ids 里选择。
+6. reason、title_hint、summary_focus 要体现用户问题里的语义差别，例如解辣、别太甜、别太酸、垫肚子。
+7. 不要生成完整 advice recommendations，不要写 evidence_sources。
+8. 不判断腐败，不说“坏了”“还能吃”“不能吃”，不做医疗诊断，不写数据库。
 
 最终输出必须是 JSON 对象，结构如下：
 {
-  "summary": "一句话摘要",
-  "recommendations": [
+  "summary_focus": "这次回答的重点",
+  "selected": [
     {
-      "title": "短标题",
-      "content": "具体建议",
+      "candidate_id": "inventory_1",
       "action_type": "eat_first | check_food | avoid_duplicate_purchase | portion_control | variety | general",
-      "related_foods": ["banana"],
-      "basis": ["依据说明"],
+      "reason": "选择这个批次的语义理由",
       "evidence_ids": ["inventory_1", "storage_banana_251_refrigerate"],
-      "confidence": "low | medium | high"
+      "title_hint": "短标题提示"
+    }
+  ],
+  "excluded": [
+    {
+      "candidate_id": "inventory_2",
+      "reason": "不选择它的原因"
     }
   ]
 }
-"""
 
+约束：
+1. selected 最多 3 条。
+2. reason 控制在 60 个中文字符内。
+3. 如果没有合适候选，selected 返回空数组，summary_focus 说明原因。
+"""
 
 ADVICE_TOOL_SCHEMAS: list[dict[str, Any]] = [
     {
@@ -117,7 +125,8 @@ def request_agent_advice_json(
         enable_thinking=enable_thinking,
         response_format={"type": "json_object"},
     )
-    return _parse_final_json(_first_message(data).get("content"))
+    selection_plan = _parse_final_json(_first_message(data).get("content"))
+    return _selection_plan_to_advice(selection_plan, context)
 
 
 def execute_advice_tool(session: Session, call: dict[str, Any]) -> dict[str, Any]:
@@ -204,6 +213,247 @@ def _strip_code_fence(content: str) -> str:
     if len(lines) >= 3 and lines[-1].strip() == "```":
         return "\n".join(lines[1:-1]).strip()
     return content
+
+
+def _selection_plan_to_advice(plan: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
+    candidates = _candidate_map(context)
+    selected = plan.get("selected", [])
+    if not isinstance(selected, list):
+        selected = []
+
+    recommendations: list[dict[str, Any]] = []
+    for entry in selected[:3]:
+        if not isinstance(entry, dict):
+            continue
+        candidate_id = str(entry.get("candidate_id") or "")
+        candidate = candidates.get(candidate_id)
+        if candidate is None:
+            continue
+
+        allowed_ids = _candidate_allowed_evidence_ids(candidate)
+        model_ids = [
+            str(evidence_id)
+            for evidence_id in _as_list(entry.get("evidence_ids"))
+            if str(evidence_id) in allowed_ids
+        ]
+        evidence_ids = _compact_ids(
+            [
+                candidate_id,
+                *_required_supporting_evidence_ids(candidate, allowed_ids),
+                *model_ids,
+                *_default_supporting_evidence_ids(candidate, allowed_ids),
+            ]
+        )
+        evidence_ids = evidence_ids[:4]
+
+        reason = _compact_text(str(entry.get("reason") or candidate.get("reason") or ""), 90)
+        if not reason:
+            reason = _candidate_default_reason(candidate)
+        action_type = _normalize_action_type(entry.get("action_type"))
+        title = _title_from_selection(entry.get("title_hint"), candidate, action_type)
+        content = _content_from_selection(candidate, reason, action_type)
+        recommendations.append(
+            {
+                "title": title,
+                "content": content,
+                "action_type": action_type,
+                "related_foods": [str(candidate.get("food"))],
+                "basis": _basis_from_selection(candidate, reason),
+                "evidence_ids": evidence_ids,
+                "confidence": "high" if len(recommendations) == 0 else "medium",
+            }
+        )
+
+    return {
+        "summary": _summary_from_selection(plan, recommendations),
+        "recommendations": recommendations,
+    }
+
+
+def _candidate_map(context: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    candidates: dict[str, dict[str, Any]] = {}
+    for item in context.get("eating_candidates", []):
+        if not isinstance(item, dict):
+            continue
+        batch = item.get("batch") if isinstance(item.get("batch"), dict) else {}
+        candidate_id = str(batch.get("evidence_id") or item.get("candidate_id") or "")
+        if candidate_id:
+            candidates[candidate_id] = item
+    for item in context.get("edible_batches", []):
+        if not isinstance(item, dict):
+            continue
+        candidate_id = str(item.get("evidence_id") or "")
+        if candidate_id and candidate_id not in candidates:
+            allowed_ids = _batch_allowed_evidence_ids(item, context)
+            candidates[candidate_id] = {
+                "food": item.get("food"),
+                "display_name": item.get("display_name"),
+                "batch": item,
+                "allowed_evidence_ids": allowed_ids,
+                "use_evidence_ids": allowed_ids,
+                "reason": _batch_reason(item),
+            }
+    return candidates
+
+
+def _candidate_allowed_evidence_ids(candidate: dict[str, Any]) -> set[str]:
+    batch = candidate.get("batch") if isinstance(candidate.get("batch"), dict) else {}
+    ids = {
+        str(evidence_id)
+        for evidence_id in [
+            *_as_list(candidate.get("allowed_evidence_ids")),
+            *_as_list(candidate.get("use_evidence_ids")),
+        ]
+        if evidence_id
+    }
+    if batch.get("evidence_id"):
+        ids.add(str(batch["evidence_id"]))
+    return ids
+
+
+def _default_supporting_evidence_ids(candidate: dict[str, Any], allowed_ids: set[str]) -> list[str]:
+    batch = candidate.get("batch") if isinstance(candidate.get("batch"), dict) else {}
+    inventory_id = str(batch.get("evidence_id") or "")
+    return [
+        evidence_id
+        for evidence_id in _candidate_support_evidence_ids(candidate)
+        if evidence_id in allowed_ids and evidence_id != inventory_id
+    ][:3]
+
+
+def _required_supporting_evidence_ids(candidate: dict[str, Any], allowed_ids: set[str]) -> list[str]:
+    return [
+        evidence_id
+        for evidence_id in _candidate_support_evidence_ids(candidate)
+        if str(evidence_id).startswith("storage_") and evidence_id in allowed_ids
+    ][:1]
+
+
+def _candidate_support_evidence_ids(candidate: dict[str, Any]) -> list[Any]:
+    ids = _as_list(candidate.get("use_evidence_ids"))
+    return ids if ids else _as_list(candidate.get("allowed_evidence_ids"))
+
+
+def _batch_allowed_evidence_ids(
+    batch: dict[str, Any], context: dict[str, Any]
+) -> list[str]:
+    food = batch.get("food")
+    location = batch.get("storage_location")
+    guideline_ids = [
+        rule.get("evidence_id")
+        for rule in context.get("guideline_rules", [])
+        if not rule.get("applies_to") or food in rule.get("applies_to", [])
+    ]
+    return _compact_ids(
+        [
+            batch.get("evidence_id"),
+            *[
+                rule.get("evidence_id")
+                for rule in context.get("storage_rules", [])
+                if rule.get("food") == food and rule.get("storage_location") == location
+            ],
+            *[
+                fact.get("evidence_id")
+                for fact in context.get("nutrition_facts", [])
+                if fact.get("food") == food
+            ],
+            *guideline_ids,
+        ]
+    )
+
+
+def _normalize_action_type(value: Any) -> str:
+    action = str(value or "eat_first")
+    if action in {
+        "eat_first",
+        "check_food",
+        "avoid_duplicate_purchase",
+        "portion_control",
+        "variety",
+        "general",
+    }:
+        return action
+    return "eat_first"
+
+
+def _title_from_selection(value: Any, candidate: dict[str, Any], action_type: str) -> str:
+    title_hint = _compact_text(str(value or ""), 18)
+    if title_hint:
+        return title_hint
+    display_name = str(candidate.get("display_name") or candidate.get("food") or "这个")
+    if action_type == "portion_control":
+        return f"适量吃{display_name}"
+    if action_type == "variety":
+        return f"搭配{display_name}"
+    return f"优先吃{display_name}"
+
+
+def _content_from_selection(candidate: dict[str, Any], reason: str, action_type: str) -> str:
+    batch = candidate.get("batch") if isinstance(candidate.get("batch"), dict) else {}
+    display_name = str(candidate.get("display_name") or candidate.get("food") or "该食物")
+    quantity = batch.get("confirmed_quantity")
+    unit = batch.get("unit") or ""
+    state = batch.get("storage_state")
+    remaining = batch.get("remaining_days")
+    fact = f"当前有{quantity}{unit}{display_name}，状态 {state}"
+    if remaining is not None:
+        fact += f"，剩余 {remaining} 天"
+    if action_type == "portion_control":
+        return _compact_text(f"{reason}。{display_name}可以少量搭配。", 80)
+    return _compact_text(f"{reason}。{fact}。", 90)
+
+
+def _basis_from_selection(candidate: dict[str, Any], reason: str) -> list[str]:
+    batch = candidate.get("batch") if isinstance(candidate.get("batch"), dict) else {}
+    basis = [reason]
+    state = batch.get("storage_state")
+    remaining = batch.get("remaining_days")
+    if state:
+        text = f"库存批次状态为 {state}"
+        if remaining is not None:
+            text += f"，剩余 {remaining} 天"
+        basis.append(text)
+    return [item for item in basis if item][:2]
+
+
+def _summary_from_selection(plan: dict[str, Any], recommendations: list[dict[str, Any]]) -> str:
+    focus = _compact_text(str(plan.get("summary_focus") or ""), 36)
+    if focus:
+        return focus
+    if not recommendations:
+        return "没有找到适合当前问题的可用库存建议。"
+    names = [item["related_foods"][0] for item in recommendations[:3]]
+    return f"建议优先考虑：{'、'.join(names)}。"
+
+
+def _candidate_default_reason(candidate: dict[str, Any]) -> str:
+    reason = str(candidate.get("reason") or "")
+    if reason:
+        return reason
+    batch = candidate.get("batch") if isinstance(candidate.get("batch"), dict) else {}
+    return _batch_reason(batch)
+
+
+def _batch_reason(batch: dict[str, Any]) -> str:
+    display_name = str(batch.get("display_name") or batch.get("food") or "该食物")
+    state = batch.get("storage_state")
+    remaining = batch.get("remaining_days")
+    if state == "eat_soon":
+        return f"{display_name}处于 eat_soon，适合优先安排"
+    if remaining is not None:
+        return f"{display_name}当前可食用，剩余 {remaining} 天"
+    return f"{display_name}当前有可食用库存"
+
+
+def _compact_text(value: str, limit: int) -> str:
+    text = " ".join(value.strip().split())
+    if len(text) <= limit:
+        return text
+    return text[: limit - 1].rstrip("，。；,. ") + "。"
+
+
+def _as_list(value: Any) -> list[Any]:
+    return value if isinstance(value, list) else []
 
 
 def _tool_get_advice_context(session: Session, arguments: dict[str, Any]) -> dict[str, Any]:
@@ -353,15 +603,19 @@ def _eating_context_payload(
                 storage.get("evidence_id") if storage else None,
                 nutrition.get("evidence_id") if nutrition else None,
                 *rule_ids_by_type.get("fruit_intake", [])[:1],
+                *rule_ids_by_type.get("sugar_moderation", [])[:1],
+                *rule_ids_by_type.get("diversity", [])[:1],
             ]
-        )[:4]
+        )
         candidates.append(
             {
+                "candidate_id": item.evidence_id,
                 "food": food.model_label,
                 "display_name": food.display_name,
                 "batch": _inventory_item_payload(item, food),
                 "storage_note": storage.get("source_text") if storage else None,
                 "nutrition_note": _nutrition_note(nutrition),
+                "allowed_evidence_ids": evidence_ids,
                 "use_evidence_ids": evidence_ids,
                 "reason": _eating_reason(item, food),
             }

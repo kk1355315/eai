@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.services.advice_agent import _parse_final_json
+from app.services.advice_agent import _parse_final_json, _selection_plan_to_advice
 
 
 def test_llm_generation_uses_openai_tool_call_loop(monkeypatch) -> None:
@@ -24,15 +24,13 @@ def test_llm_generation_uses_openai_tool_call_loop(monkeypatch) -> None:
                     "message": {
                         "role": "assistant",
                         "content": (
-                            '{"summary":"今天先吃香蕉。","recommendations":[{'
-                            '"title":"优先吃香蕉",'
-                            '"content":"香蕉处于 fresh 状态，可以优先安排。",'
+                            '{"summary_focus":"今天先吃香蕉。","selected":[{'
+                            '"candidate_id":"inventory_1",'
                             '"action_type":"eat_first",'
-                            '"related_foods":["banana"],'
-                            '"basis":["香蕉有可食用库存","水果建议适量"],'
-                            '"evidence_ids":["inventory_1","storage_banana_251_pantry",'
-                            '"nutri_banana_usda","rule_fruit_moderation_001"],'
-                            '"confidence":"high"}]}'
+                            '"reason":"香蕉现在可吃，适合先安排。",'
+                            '"evidence_ids":["inventory_1","storage_banana_251_pantry"],'
+                            '"title_hint":"优先吃香蕉"}],'
+                            '"excluded":[]}'
                         ),
                     },
                     "finish_reason": "stop",
@@ -55,7 +53,13 @@ def test_llm_generation_uses_openai_tool_call_loop(monkeypatch) -> None:
     data = response.json()
     assert data["accepted"] is True
     assert data["errors"] == []
-    assert data["advice"]["recommendations"][0]["evidence_ids"][0] == "inventory_1"
+    recommendation = data["advice"]["recommendations"][0]
+    assert recommendation["title"] == "优先吃香蕉"
+    assert recommendation["action_type"] == "eat_first"
+    assert recommendation["related_foods"] == ["banana"]
+    assert recommendation["evidence_ids"][0] == "inventory_1"
+    assert recommendation["evidence_sources"]
+    assert "香蕉现在可吃" in recommendation["basis"][0]
     assert len(calls) == 1
 
 
@@ -63,6 +67,54 @@ def test_agent_final_json_parser_accepts_wrapped_json() -> None:
     content = '说明文字\n```json\n{"summary":"ok","recommendations":[]}\n```\n'
 
     assert _parse_final_json(content) == {"summary": "ok", "recommendations": []}
+
+
+def test_selection_plan_drops_unknown_candidate() -> None:
+    advice = _selection_plan_to_advice(
+        {
+            "summary_focus": "测试",
+            "selected": [
+                {
+                    "candidate_id": "inventory_missing",
+                    "reason": "不存在",
+                    "evidence_ids": ["inventory_missing"],
+                }
+            ],
+        },
+        _selection_context(),
+    )
+
+    assert advice == {"summary": "测试", "recommendations": []}
+
+
+def test_selection_plan_filters_evidence_outside_candidate() -> None:
+    advice = _selection_plan_to_advice(
+        {
+            "summary_focus": "解辣优先清爽温和",
+            "selected": [
+                {
+                    "candidate_id": "inventory_11",
+                    "action_type": "eat_first",
+                    "reason": "梨含水多、口感清爽，适合缓和辣感。",
+                    "evidence_ids": ["inventory_11", "inventory_999", "nutri_pear_usda"],
+                    "title_hint": "先吃梨缓一缓",
+                }
+            ],
+        },
+        _selection_context(),
+    )
+
+    item = advice["recommendations"][0]
+    assert item["title"] == "先吃梨缓一缓"
+    assert item["related_foods"] == ["pear"]
+    assert "inventory_999" not in item["evidence_ids"]
+    assert item["evidence_ids"] == [
+        "inventory_11",
+        "storage_pear_266_refrigerate",
+        "nutri_pear_usda",
+    ]
+    assert "梨含水多" in item["content"]
+    assert "梨含水多" in item["basis"][0]
 
 
 def _tool_call(call_id: str, name: str, arguments: dict) -> dict:
@@ -99,4 +151,35 @@ def _recognition_payload(
         "model_version": "mvp",
         "image": {"original_path": "/tmp/frame.jpg", "width": 640, "height": 480},
         "detections": detections,
+    }
+
+
+def _selection_context() -> dict:
+    return {
+        "purpose": "eating",
+        "query": "我刚吃的太辣了想解辣吃什么",
+        "eating_candidates": [
+            {
+                "candidate_id": "inventory_11",
+                "food": "pear",
+                "display_name": "梨",
+                "batch": {
+                    "evidence_id": "inventory_11",
+                    "food": "pear",
+                    "display_name": "梨",
+                    "confirmed_quantity": 2,
+                    "unit": "piece",
+                    "status": "available",
+                    "storage_location": "refrigerate",
+                    "storage_state": "eat_soon",
+                    "remaining_days": 0,
+                },
+                "allowed_evidence_ids": [
+                    "inventory_11",
+                    "storage_pear_266_refrigerate",
+                    "nutri_pear_usda",
+                ],
+                "reason": "梨处于 eat_soon，剩余 0 天。",
+            }
+        ],
     }
