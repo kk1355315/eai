@@ -470,9 +470,9 @@ def test_pending_quantity_change_keeps_old_shopping_advice_until_user_confirms()
 
     assert pending_item["pending_change_type"] == "possible_consumed"
     assert pending_item["pending_detected_quantity"] == 1
-    assert before_change["basis"] == ["香蕉 当前库存 2 piece"]
-    assert while_pending["basis"] == ["香蕉 当前库存 2 piece"]
-    assert after_confirm["basis"] == ["香蕉 当前库存 1 piece"]
+    assert before_change["basis"] == ["香蕉 当前还有2个"]
+    assert while_pending["basis"] == ["香蕉 当前还有2个"]
+    assert after_confirm["basis"] == ["香蕉 当前还有1个"]
 
 
 def test_llm_prompt_does_not_offer_eat_first_hint_for_check_required_foods(

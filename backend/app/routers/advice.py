@@ -258,7 +258,7 @@ def get_shopping_advice(session: SessionDep) -> ShoppingAdviceResponse:
     for item in inventory:
         food = foods[item.food_item_id]
         evidence_ids = [item.evidence_id]
-        basis = [f"{food.display_name} 当前库存 {item.confirmed_quantity} {item.unit}"]
+        basis = [f"{food.display_name} 当前还有{_quantity_text(item.confirmed_quantity, item.unit)}"]
         habit = habit_map.get((item.food_item_id, "often_overbuys"))
         if habit is not None:
             evidence_ids.append(habit.evidence_id)
@@ -389,7 +389,7 @@ def _priority_item(
         "safe_days": item.safe_days,
         "remaining_days": item.remaining_days,
         "eat_priority_rank": item.eat_priority_rank,
-        "basis": [f"{food.display_name} 处于 {item.storage_state} 状态"],
+        "basis": [f"{food.display_name}{_state_basis(item.storage_state, item.remaining_days)}"],
         "evidence_ids": evidence_ids,
     }
 
@@ -426,7 +426,7 @@ def _fallback_advice(session: Session) -> LlmAdvicePayload:
     recommendations = [
         AdviceItem(
             title=f"优先处理 {item['display_name']}",
-            content=f"{item['display_name']} 处于 {item['storage_state']} 状态，可以优先安排。",
+            content=f"{item['display_name']}{_state_basis(item['storage_state'], item.get('remaining_days'))}，可以优先安排。",
             action_type="eat_first",
             related_foods=[item["food"]],
             basis=item["basis"],
@@ -749,6 +749,42 @@ def _sources_for_evidence_ids(
     return sources
 
 
+def _quantity_text(quantity: Any, unit: Any) -> str:
+    labels = {
+        "piece": "个",
+        "pieces": "个",
+        "count": "个",
+        "g": "克",
+        "gram": "克",
+        "grams": "克",
+        "kg": "千克",
+    }
+    return f"{quantity}{labels.get(str(unit or '').lower(), str(unit or ''))}"
+
+
+def _state_label(state: Any) -> str:
+    labels = {
+        "fresh": "状态还新鲜",
+        "eat_soon": "建议尽快吃",
+        "check_required": "需要先检查状态",
+        "not_recommended": "不建议直接吃",
+    }
+    return labels.get(str(state or ""), "状态待确认")
+
+
+def _state_basis(state: Any, remaining_days: Any = None) -> str:
+    text = _state_label(state)
+    if remaining_days is None:
+        return text
+    try:
+        days = int(remaining_days)
+    except (TypeError, ValueError):
+        return f"{text}，建议食用期还剩{remaining_days}天"
+    if days <= 0:
+        return f"{text}，今天就该优先吃"
+    return f"{text}，建议食用期还剩{days}天"
+
+
 def _evidence_source_map(session: Session) -> dict[str, dict[str, Any]]:
     foods = _food_map(session)
     sources: dict[str, dict[str, Any]] = {}
@@ -761,7 +797,10 @@ def _evidence_source_map(session: Session) -> dict[str, dict[str, Any]]:
             "type": "inventory",
             "title": f"{food.display_name} 库存记录",
             "source": "用户确认库存",
-            "summary": f"当前库存 {item.confirmed_quantity} {item.unit}，状态 {item.storage_state or 'unknown'}。",
+            "summary": (
+                f"当前库存 {_quantity_text(item.confirmed_quantity, item.unit)}，"
+                f"{_state_label(item.storage_state)}。"
+            ),
             "url": None,
         }
 
