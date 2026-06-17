@@ -592,6 +592,14 @@ def _enrich_llm_evidence(
         inferred_ids = _infer_evidence_ids_from_hints(item, context, inferred_foods)
         if not inferred_ids:
             continue
+        current_inventory_ids = set(_inventory_evidence_ids(item.evidence_ids))
+        if current_inventory_ids:
+            inferred_ids = [
+                evidence_id
+                for evidence_id in inferred_ids
+                if not evidence_id.startswith("inventory_")
+                or evidence_id in current_inventory_ids
+            ]
         item.evidence_ids = _merge_evidence_ids(
             item.evidence_ids,
             [evidence_id for evidence_id in inferred_ids if evidence_id in known_evidence_ids],
@@ -648,7 +656,7 @@ def _merge_food_labels(current: list[str], inferred: list[str]) -> list[str]:
 
 
 def _merge_evidence_ids(current: list[str], inferred: list[str]) -> list[str]:
-    return list(dict.fromkeys([*current, *inferred]))
+    return list(dict.fromkeys([*current, *inferred]))[:4]
 
 
 def _store_checked_advice(advice: LlmAdvicePayload, session: Session) -> LlmAdviceResponse:

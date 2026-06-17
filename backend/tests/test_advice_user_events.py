@@ -7,6 +7,7 @@ from sqlmodel import Session, select
 from app.db import engine
 from app.main import app
 from app.models import AdviceRecord, FoodItem, FoodStorageRule, InventoryItem
+from app.routers.advice import AdviceItem, LlmAdvicePayload, _enrich_llm_evidence
 from app.routers.inventory import CHECK_REQUIRED_MESSAGE
 from app.services.advice_context import build_advice_context
 
@@ -433,6 +434,56 @@ def test_advice_llm_fills_missing_evidence_ids_from_backend_hints(monkeypatch) -
     assert "storage_banana_251_pantry" in evidence_ids
     assert "nutri_banana_usda" in evidence_ids
     assert "rule_fruit_moderation_001" in evidence_ids
+
+
+def test_llm_evidence_enrichment_keeps_selected_inventory_batch() -> None:
+    advice = LlmAdvicePayload(
+        summary="今天优先安排香蕉。",
+        recommendations=[
+            AdviceItem(
+                title="优先吃香蕉",
+                content="香蕉适合先吃。",
+                action_type="eat_first",
+                related_foods=["banana"],
+                basis=["模型选择了这个香蕉批次"],
+                evidence_ids=["inventory_7"],
+            )
+        ],
+    )
+    context = {
+        "evidence_ids": {
+            "inventory_6",
+            "inventory_7",
+            "storage_banana_251_refrigerate",
+            "nutri_banana_usda",
+            "rule_fruit_moderation_001",
+        },
+        "supported_foods": {"banana"},
+        "food_aliases": {"banana": ["香蕉"]},
+        "evidence_hints": [
+            {
+                "food": "banana",
+                "action_type": "eat_first",
+                "use_evidence_ids": [
+                    "inventory_6",
+                    "storage_banana_251_refrigerate",
+                    "nutri_banana_usda",
+                    "rule_fruit_moderation_001",
+                ],
+            }
+        ],
+    }
+
+    enriched = _enrich_llm_evidence(advice, context)
+    evidence_ids = enriched.recommendations[0].evidence_ids
+
+    assert evidence_ids == [
+        "inventory_7",
+        "storage_banana_251_refrigerate",
+        "nutri_banana_usda",
+        "rule_fruit_moderation_001",
+    ]
+    assert "inventory_6" not in evidence_ids
 
 
 def test_advice_llm_infers_food_from_text_when_related_foods_is_empty(monkeypatch) -> None:
