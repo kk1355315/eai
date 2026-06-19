@@ -251,6 +251,7 @@ def merge_inventory_for_recognition(
     food: FoodItem,
     detected_quantity: int,
     captured_at: datetime,
+    auto_confirm: bool = False,
 ) -> InventoryItem:
     item, is_duplicate_window = _find_merge_target(
         session, event.camera_id, food.id or 0, captured_at
@@ -262,31 +263,66 @@ def merge_inventory_for_recognition(
             camera_id=event.camera_id,
             food_item_id=food.id or 0,
             detected_quantity=detected_quantity,
-            confirmed_quantity=0,
+            confirmed_quantity=detected_quantity if auto_confirm else 0,
             unit="piece",
             storage_location="pantry",
             first_seen_at=captured_at,
             last_seen_at=captured_at,
-            status="pending_confirm",
+            status="available" if auto_confirm else "pending_confirm",
             source_event_id=event.id,
-            pending_change_type="new_quantity",
-            pending_detected_quantity=detected_quantity,
+            pending_change_type="none" if auto_confirm else "new_quantity",
+            pending_detected_quantity=None if auto_confirm else detected_quantity,
         )
         session.add(item)
         session.flush()
         item.evidence_id = f"inventory_{item.id}"
         _apply_storage_state(session, item, captured_at)
         session.add(item)
+        if auto_confirm:
+            _record_inventory_truth_change(
+                session=session,
+                item=item,
+                food=food,
+                old_quantity=0,
+                old_status="pending_confirm",
+                change_source="recognition_auto_confirm",
+                pending_change_type="new_quantity",
+            )
         return item
 
+    old_quantity = item.confirmed_quantity
+    old_status = item.status
+    pending_change_type: str | None = None
     item.last_seen_at = captured_at
     item.source_event_id = event.id
-    if not is_duplicate_window:
+    if auto_confirm and (not is_duplicate_window or item.status == "pending_confirm"):
+        pending_change_type = (
+            item.pending_change_type
+            if item.pending_change_type != "none"
+            else _quantity_change_type(old_quantity, detected_quantity)
+        )
+        item.detected_quantity = detected_quantity
+        item.confirmed_quantity = detected_quantity
+        item.status = "available"
+        item.pending_change_type = "none"
+        item.pending_detected_quantity = None
+    elif not is_duplicate_window:
         item.detected_quantity = detected_quantity
         _apply_pending_quantity_change(item, detected_quantity)
     item.updated_at = utc_now()
     _apply_storage_state(session, item, captured_at)
     session.add(item)
+    if auto_confirm and pending_change_type is not None:
+        session.flush()
+        _record_inventory_truth_change(
+            session=session,
+            item=item,
+            food=food,
+            old_quantity=old_quantity,
+            old_status=old_status,
+            change_source="recognition_auto_confirm",
+            pending_change_type=pending_change_type,
+        )
     return item
 
 
@@ -317,6 +353,14 @@ def _apply_pending_quantity_change(item: InventoryItem, detected_quantity: int) 
     elif item.pending_change_type != "new_quantity":
         item.pending_change_type = "none"
         item.pending_detected_quantity = None
+
+
+def _quantity_change_type(old_quantity: int, detected_quantity: int) -> str | None:
+    if detected_quantity > old_quantity:
+        return "possible_added"
+    if detected_quantity < old_quantity:
+        return "possible_consumed"
+    return None
 
 
 def _refresh_storage_states(session: Session, items: list[InventoryItem]) -> None:

@@ -22,6 +22,7 @@ router = APIRouter(tags=["recognitions"])
 SessionDep = Annotated[Session, Depends(get_session)]
 
 MIN_CONFIDENCE = 0.60
+AUTO_CONFIRM_MODEL_NAMES = {"fruit-yolo11n-imx500"}
 UNCERTAIN_CLASS_KEYWORDS = (
     "package",
     "packaged",
@@ -212,6 +213,7 @@ def create_recognition(
     session.add(event)
     session.flush()
 
+    auto_confirm_inventory = _should_auto_confirm_inventory(payload)
     for label, detected_quantity in accepted_counts.items():
         merge_inventory_for_recognition(
             session=session,
@@ -219,6 +221,7 @@ def create_recognition(
             food=accepted_foods[label],
             detected_quantity=detected_quantity,
             captured_at=captured_at,
+            auto_confirm=auto_confirm_inventory,
         )
 
     session.commit()
@@ -299,6 +302,11 @@ def _classify_detection(
     if detection.confidence < MIN_CONFIDENCE:
         return "pending_confirm", "low_confidence"
     return "accepted", ""
+
+
+def _should_auto_confirm_inventory(payload: RecognitionCreate) -> bool:
+    model_name = (payload.model_name or "").strip()
+    return payload.source == "ai_camera" and model_name in AUTO_CONFIRM_MODEL_NAMES
 
 
 def _parse_bbox(value: Any) -> dict[str, float | None]:

@@ -217,6 +217,37 @@ def test_pending_confirm_inventory_does_not_get_eat_priority_rank() -> None:
     assert after_confirm["eat_priority_rank"] == 1
 
 
+def test_imx500_recognition_auto_confirms_inventory() -> None:
+    payload = _recognition_payload(counts={"apple": 4})
+    payload["model_name"] = "fruit-yolo11n-imx500"
+    payload["model_version"] = "20260616"
+
+    with TestClient(app) as client:
+        response = client.post("/recognitions", json=payload)
+        inventory = client.get("/inventory/storage-states")
+
+    assert response.status_code == 200
+    assert response.json()["total_count"] == 4
+    items = inventory.json()
+    assert len(items) == 1
+    item = items[0]
+    assert item["food"]["model_label"] == "apple"
+    assert item["detected_quantity"] == 4
+    assert item["confirmed_quantity"] == 4
+    assert item["status"] == "available"
+    assert item["pending_change_type"] == "none"
+    assert item["pending_detected_quantity"] is None
+    assert item["eat_priority_rank"] == 1
+
+    with Session(engine) as session:
+        events = session.exec(
+            select(UserFoodEvent).where(UserFoodEvent.event_type == "purchased")
+        ).all()
+
+    assert len(events) == 1
+    assert events[0].quantity == 4
+
+
 def test_storage_states_use_thresholds_and_fixed_check_message() -> None:
     with TestClient(app) as client:
         client.post(
